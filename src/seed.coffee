@@ -5,22 +5,22 @@ siteTable =
   amazonCN: {
     url: "www.amazon.cn"
     generateProductUrl: (productId) ->
-      return httpPrefix + this.url + "/dp/" + productId
+      return httpPrefix + @url + "/dp/" + productId
   }
   amazonUS: {
     url: "www.amazon.com"
     generateProductUrl: (productId) ->
-      return httpPrefix + this.url + "/dp/" + productId
+      return httpPrefix + @url + "/dp/" + productId
   }
   amazonJP: {
     url: "www.amazon.co.jp"
     generateProductUrl: (productId) ->
-      return httpPrefix + this.url + "/dp/" + productId
+      return httpPrefix + @url + "/dp/" + productId
   }
   jingdong: {
     url: "www.jd.com"
     generateProductUrl: (productId) ->
-      return httpPrefix + this.url.replace("www", "item") + "/" + \
+      return httpPrefix + @url.replace("www", "item") + "/" + \
              productId + htmlSuffix
   }
 

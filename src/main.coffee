@@ -1,6 +1,8 @@
-request = require("request")
-cheerio = require("cheerio")
+logger = require('winston')
+logger.add(logger.transports.File, filename: '/tmp/ebuy_monitor.log')
+
 seed = require("./seed.js")
+visitor = require("./visitor.js")
 
 monitorItems = [
   seed("B00K68MONW", "www.amazon.cn"),
@@ -9,14 +11,7 @@ monitorItems = [
 ]
 
 monitorItems.map((item) ->
-  request(item.url, (error, response, body) ->
-    if ((not error) and response.statusCode == 200)
-      $ = cheerio.load(body)
-      $('#priceblock_ourprice').each(->
-        console.log('%s', $(this).text())
-        return
-      )
-    return
-  )
+  v = visitor.select(item.siteUrl)
+  v.visit(item.url)
   return
 )
