@@ -1,0 +1,22 @@
+{
+  "name": "ebuy_monitor",
+  "description": "Personal ebuy price monitor tool",
+  "version": "0.0.1",
+  "author": "Zhu Jie <sms.extreme@gmail.com>",
+  "contributors": [],
+  "dependencies": {
+    "request": "*",
+    "cheerio": "*"
+  },
+  "devDependencies": {
+    "request": "*",
+    "cheerio": "*"
+  },
+  "keywords": ["personal", "ebuy", "monitor"],
+  "repository": "https://github.com/PaprikaZ/ebuy_monitor.git",
+  "main": "main",
+  "engines": {
+    "node": "*"
+  }
+}
+
