@@ -10,7 +10,9 @@
   },
   "devDependencies": {
     "request": "*",
-    "cheerio": "*"
+    "cheerio": "*",
+    "winston": "*",
+    "async": "*"
   },
   "keywords": ["personal", "ebuy", "monitor"],
   "repository": "https://github.com/PaprikaZ/ebuy_monitor.git",
