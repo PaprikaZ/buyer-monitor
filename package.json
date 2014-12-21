@@ -9,6 +9,7 @@
     "cheerio": "*"
   },
   "devDependencies": {
+    "minimist": "*",
     "request": "*",
     "cheerio": "*",
     "winston": "*",
