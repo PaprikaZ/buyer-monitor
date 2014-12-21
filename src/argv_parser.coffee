@@ -12,11 +12,11 @@ printHelp = ->
   console.log("")
   console.log("The most commonly used example:")
   console.log("")
-  console.log("  Show all existing products")
-  console.log("  > node app.js show")
+  console.log("  List all existing products")
+  console.log("  > node app.js list")
   console.log("  Also you can specify the id or site as to filter result")
-  console.log("  > node app.js show site www.amazon.cn")
-  console.log("  > node app.js show id B00JG8GOWU ")
+  console.log("  > node app.js list site www.amazon.cn")
+  console.log("  > node app.js list id B00JG8GOWU ")
   console.log("")
   console.log("  Add product id B00JG8GOWU on site www.amazon.com")
   console.log("  > node app.js add B00JG8GOWU www.amazon.com")
@@ -36,11 +36,12 @@ printHelp = ->
   return
 
 productFile = path.join(__dirname, "../product.json")
-showProduct = (id, site) ->
+listProduct = (id, site) ->
   JSON.parse(fs.readFileSync(productFile)).forEach((elt, index, err) ->
-    console.log("product id: %s, site: %s", elt.id, elt.site)
+    console.log("product id %s, site %s", elt.id, elt.site)
     return
   )
+  console.log("done.")
   return
 
 addProduct = (id, site) ->
@@ -52,8 +53,9 @@ addProduct = (id, site) ->
   if duplicatedProducts.length == 0
     products.push({id: id, site: site})
     fs.writeFileSync(productFile, JSON.stringify(products))
+    console.log("done.", id, site)
   else
-    console.log("Product id: %s already existed on %s", id, site)
+    console.log("product id %s, site %s already existed", id, site)
   return
 
 removeProduct = (id, site) ->
@@ -68,6 +70,7 @@ removeProduct = (id, site) ->
       )
     )
   )
+  console.log("done.")
   return
 
 resetUserData = ->
@@ -92,8 +95,8 @@ argvStyleConvert = (argv) ->
       return "--add"
     else if elt == "remove"
       return "--remove"
-    else if elt == "show"
-      return "--show"
+    else if elt == "list"
+      return "--list"
     else if elt == "id"
       return "--id"
     else if elt == "site"
@@ -110,14 +113,14 @@ parser = module.exports
 parser.parse = (argv, launch) ->
   argv = argvStyleConvert(argv)
   argv = minimist(argv, minimistOpt)
-  operations =[argv.add, argv.remove, argv.show]
+  operations =[argv.add, argv.remove, argv.list]
   validOpertions = operations.filter((elt, idx, err) ->
     return elt == true
   )
   if 1 < validOpertions
     console.log("Please do add or remove operation, not both.")
-  else if argv.show
-    showProduct()
+  else if argv.list
+    listProduct()
   else if argv.add and argv.site and argv.id
     addProduct(argv.id, argv.site)
   else if argv.remove and argv.id
