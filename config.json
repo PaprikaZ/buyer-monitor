@@ -1,9 +1,15 @@
 {
-  "monitorInterval" : 10000,
+  "monitorInterval" : 900000,
   "redisHost": "127.0.0.1",
   "redisPort": 6379,
   "redisRecordDBIndex": 0,
   "redisHistoryKey": "history",
   "redisPushQueueKey": "push_queue",
-  "redisPullQueueKey": "pull_queue"
+  "redisPullQueueKey": "pull_queue",
+
+  "pushServiceUrl": "https://api.pushbullet.com/v2/pushes",
+  "deviceServiceUrl": "https://api.pushbullet.com/v2/devices",
+  "userServiceUrl": "https://api.pushbullet.com/v2/users/me",
+
+  "accounts": []
 }
