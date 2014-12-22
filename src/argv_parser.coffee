@@ -1,11 +1,19 @@
+util = require("util")
 fs = require("fs")
 path = require("path")
 minimist = require("minimist")
 
+productFile = path.join(__dirname, "../product.json")
+reportUnknownArg = ->
+  console.log("Unknown arguments, please see help with 'node app.js help'")
+  process.exit()
+  return
+
 printHelp = ->
   console.log("Usage:")
   console.log("  node app.js")
-  console.log("    add id <product-id> site <www.example.com>")
+  console.log("    list")
+  console.log("    add id <product-id> site <www.example.com> price under <target>")
   console.log("    remove id <product-id>")
   console.log("    reset")
   console.log("    help")
@@ -19,12 +27,22 @@ printHelp = ->
   console.log("  > node app.js list id B00JG8GOWU ")
   console.log("")
   console.log("  Add product id B00JG8GOWU on site www.amazon.com")
-  console.log("  > node app.js add B00JG8GOWU www.amazon.com")
+  console.log("  > node app.js add id B00JG8GOWU site www.amazon.com <require>")
+  console.log("    About the requirement, some operation is given")
+  console.log("    Those price under 12 (according local) will be noticed")
+  console.log("    > price under 12")
+  console.log("")
+  console.log("    Those discount above 20% will be noticed")
+  console.log("    > price discount above 0.8")
+  console.log("    > price discount above 20")
+  console.log("")
+  console.log("    Also benefit available, support regex")
+  console.log("    > benefit /buy two with one off/")
   console.log("")
   console.log("  Remove product id B00JG8GOWU")
-  console.log("  > node app.js remove B00JG8GOWU site www.amazon.com")
+  console.log("  > node app.js remove id B00JG8GOWU site www.amazon.com")
   console.log("  Since duplicated is merely happen, you ignore site option")
-  console.log("  > node app.js remove B00JG8GOWU")
+  console.log("  > node app.js remove id B00JG8GOWU")
   console.log("")
   console.log("  Reset all added products")
   console.log("  > node app.js reset")
@@ -35,31 +53,116 @@ printHelp = ->
   console.log("The monitor products located in product.json at root path.")
   return
 
-productFile = path.join(__dirname, "../product.json")
-listProduct = (id, site) ->
+listHandler = ->
+  console.log("Products monitored:")
   JSON.parse(fs.readFileSync(productFile)).forEach((elt, index, err) ->
-    console.log("product id %s, site %s", elt.id, elt.site)
+    output = util.format("id %s site %s ", elt.id, elt.site)
+    if elt.price
+      output += util.format( "price %s %s ", elt.price.compare, elt.price.target)
+    if elt.discount
+      output += util.format(
+        "discount %s %s\%off ", elt.discount.compare, elt.discount.target)
+    if elt.benefit
+      output += util.format(
+        "benefit match \/%s\/%s",
+        elt.benefit.regex, elt.benefit.ignoreCase? "i" : "")
+    console.log(output)
     return
   )
   console.log("done.")
   return
 
-addProduct = (id, site) ->
-  products = JSON.parse(fs.readFileSync(productFile))
-  duplicatedProducts = products.filter((elt, index, err) ->
-    return elt.id == id and elt.site == site
-  )
-  
-  if duplicatedProducts.length == 0
-    products.push({id: id, site: site})
-    fs.writeFileSync(productFile, JSON.stringify(products))
-    console.log("done.", id, site)
-  else
-    console.log("product id %s, site %s already existed", id, site)
+addHandler = (argv) ->
+  writeRecord = (record) ->
+    products = JSON.parse(fs.readFileSync(productFile))
+    duplicatedProducts = products.filter((elt, index, err) ->
+      return elt.id == record.id and elt.site == record.site
+    )
+    
+    if duplicatedProducts.length == 0
+      products.push(record)
+      fs.writeFileSync(productFile, JSON.stringify(products))
+      console.log("done.")
+    else
+      console.log("product id %s, site %s already existed", record.id, record.site)
+    return
+
+  analyze = ->
+    record = {}
+    priceIter = (remaining) ->
+      if remaining[0] == "under"
+        record.price = {compare: "under", target: parseInt(remaining[1])}
+        return iter(remaining.slice(2))
+      else
+        reportUnknownArg()
+      return
+
+    discountIter = (remaining) ->
+      if remaining[0] == "above"
+        record.discount = {compare: "above", target: parseInt(remaining[1])}
+        return iter(remaining.slice(2))
+      else
+        reportUnknownArg()
+      return
+
+    benefitIter = (remaining) ->
+      regex = /^\/(.*)\/(i?)$/
+      if regex.test(remaining[0])
+        matches = remaining[0].match(regex)
+        record.benefit = {regex: matches[1], ignoreCase: matches[2] == "i"}
+        return iter(remaining.slice(1))
+      else
+        reportUnknownArg()
+      return
+
+    iter = (remaining) ->
+      if remaining.length == 0
+        return record
+      else if remaining[0] == "id"
+        record.id = remaining[1]
+        iter(remaining.slice(2))
+      else if remaining[0] == "site"
+        record.site = remaining[1]
+        iter(remaining.slice(2))
+      else if remaining[0] == "price"
+        priceIter(remaining.slice(1))
+      else if remaining[0] == "discount"
+        discountIter(remaining.slice(1))
+      else if remaining[0] == "benefit"
+        benefitIter(remaining.slice(1))
+      else
+        reportUnknownArg()
+      return
+
+    iter(argv)
+    if record.price or record.discount or record.benefit
+      return record
+    else
+      reportUnknownArg()
+    return
+
+  writeRecord(analyze())
   return
 
-removeProduct = (id, site) ->
-  products = fs.readFileSync(productFile)
+#addHandler = (id, site) ->
+
+removeHandler = (argv) ->
+  analyze = ->
+    [id, site] = [false, false]
+    iter = (remaining) ->
+      if remaining.length == 0
+        return [id, site]
+      else if remaining[0] == "id"
+        id = remaining[1]
+      else if remaining[0] == "site"
+        site = remaining[1]
+      else
+        reportUnknownArg()
+        return
+      return iter(remaining.slice(2))
+    return iter(argv)
+  [id, site] = analyze()
+  products = JSON.parse(fs.readFileSync(productFile))
   fs.writeFileSync(
     productFile,
     JSON.stringify(products.filter((elt, index, err) ->
@@ -73,7 +176,7 @@ removeProduct = (id, site) ->
   console.log("done.")
   return
 
-resetUserData = ->
+resetHandler = ->
   process.stdout.write("Are you sure to reset product data? [yes/no] ")
   process.stdin.setEncoding("utf8")
   process.stdin.once("data", (input) ->
@@ -84,53 +187,26 @@ resetUserData = ->
       console.log("Reset aborted by user")
     else
       console.log("Invalid response, quit")
-    process.exit()
-    return
+    return process.exit()
   )
   return
 
-argvStyleConvert = (argv) ->
-  return argv.map((elt, index, err) ->
-    if elt == "add"
-      return "--add"
-    else if elt == "remove"
-      return "--remove"
-    else if elt == "list"
-      return "--list"
-    else if elt == "id"
-      return "--id"
-    else if elt == "site"
-      return "--site"
-    else if elt == "reset"
-      return "--reset"
-    else if elt == "help"
-      return "--help"
-    else
-      return elt
-  )
-minimistOpt = {}
 parser = module.exports
 parser.parse = (argv, launch) ->
-  argv = argvStyleConvert(argv)
-  argv = minimist(argv, minimistOpt)
-  operations =[argv.add, argv.remove, argv.list]
-  validOpertions = operations.filter((elt, idx, err) ->
-    return elt == true
-  )
-  if 1 < validOpertions
-    console.log("Please do add or remove operation, not both.")
-  else if argv.list
-    listProduct()
-  else if argv.add and argv.site and argv.id
-    addProduct(argv.id, argv.site)
-  else if argv.remove and argv.id
-    removeProduct(arg.id, arg.site)
-  else if argv.reset
-    resetUserData()
-  else if argv.help
-    printHelp()
-  else if argv._.length == 0
+  console.log(argv)
+  if argv.length == 0
     launch()
+  else if argv[0] == "add" and 1 < argv.length
+    addHandler(argv.slice(1))
+  else if argv[0] == "remove"
+    removeHandler(argv.slice(1))
+  else if argv[0] == "list" and argv.length == 1
+    listHandler()
+  else if argv[0] == "reset" and argv.length == 1
+    resetHandler()
+  else if argv[0] == "help" and argv.length == 1
+    printHelp()
   else
-    console.log("Unknown arguments, please see help with 'node app.js help'")
+    reportUnknownArg()
+    return
   return
