@@ -65,7 +65,7 @@ listHandler = ->
     if elt.benefit
       output += util.format(
         "benefit match \/%s\/%s",
-        elt.benefit.regex, elt.benefit.ignoreCase? "i" : "")
+        elt.benefit.regex, elt.benefit.option)
     console.log(output)
     return
   )
@@ -109,7 +109,7 @@ addHandler = (argv) ->
       regex = /^\/(.*)\/(i?)$/
       if regex.test(remaining[0])
         matches = remaining[0].match(regex)
-        record.benefit = {regex: matches[1], ignoreCase: matches[2] == "i"}
+        record.benefit = {regex: matches[1], option: matches[2]}
         return iter(remaining.slice(1))
       else
         reportUnknownArg()
@@ -193,12 +193,11 @@ resetHandler = ->
 
 parser = module.exports
 parser.parse = (argv, launch) ->
-  console.log(argv)
   if argv.length == 0
     launch()
   else if argv[0] == "add" and 1 < argv.length
     addHandler(argv.slice(1))
-  else if argv[0] == "remove"
+  else if argv[0] == "remove" and 1 < argv.length
     removeHandler(argv.slice(1))
   else if argv[0] == "list" and argv.length == 1
     listHandler()

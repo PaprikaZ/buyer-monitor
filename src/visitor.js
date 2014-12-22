@@ -60,7 +60,9 @@ Visitor = (function() {
   Visitor.prototype.parsePage = function(html) {};
 
   Visitor.prototype.pushQueue = function(result) {
-    client.lpush(pushQueueKey, JSON.stringify(result));
+    if (this.seed.verdict(result)) {
+      client.lpush(pushQueueKey, JSON.stringify(result));
+    }
   };
 
   Visitor.prototype.pushRecord = function(record) {

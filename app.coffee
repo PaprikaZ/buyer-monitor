@@ -11,7 +11,7 @@ launchMonitor = ->
   seed = rootRequire("src/seed.js")
   monitorSeeds = JSON.parse(
     fs.readFileSync(path.join(__dirname, "product.json"))).map((item) ->
-      return seed(item.id, item.site)
+      return seed(item)
   )
   
   async = require("async")

@@ -29,11 +29,13 @@ Parser = (function() {
     var $, result;
     $ = this.load(html);
     result = {};
-    result.price = this.price($);
     result.title = this.title($);
+    result.price = this.price($);
     result.fullPrice = this.fullPrice($);
+    result.discount = (1 - result.price / result.fullPrice) * 100;
     result.review = this.review($);
     result.instore = this.instore($);
+    result.benefits = [];
     return result;
   };
 
@@ -62,12 +64,16 @@ AmazonCNParser = (function(_super) {
     return selector('#productTitle').text();
   };
 
+  AmazonCNParser.prototype.priceToInt = function(text) {
+    return parseInt(text.slice(1).replace(",", ""));
+  };
+
   AmazonCNParser.prototype.price = function(selector) {
-    return selector('#priceblock_ourprice').text();
+    return this.priceToInt(selector('#priceblock_ourprice').text());
   };
 
   AmazonCNParser.prototype.fullPrice = function(selector) {
-    return selector('#priceblock_ourprice').parent().parent().parent().children().first().children().last().text();
+    return this.priceToInt(selector('#priceblock_ourprice').parent().parent().parent().children().first().children().last().text());
   };
 
   AmazonCNParser.prototype.review = function(selector) {

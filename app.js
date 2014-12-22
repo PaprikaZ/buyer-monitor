@@ -21,7 +21,7 @@ launchMonitor = function() {
   var async, asyncParallelRequests, monitorInterval, monitorSeeds, seed, visitor;
   seed = rootRequire("src/seed.js");
   monitorSeeds = JSON.parse(fs.readFileSync(path.join(__dirname, "product.json"))).map(function(item) {
-    return seed(item.id, item.site);
+    return seed(item);
   });
   async = require("async");
   visitor = rootRequire("src/visitor.js");

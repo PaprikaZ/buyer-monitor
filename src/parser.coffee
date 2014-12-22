@@ -20,11 +20,13 @@ class Parser
   parse: (html) ->
     $ = @load(html)
     result = {}
-    result.price = @price($)
     result.title = @title($)
+    result.price = @price($)
     result.fullPrice = @fullPrice($)
+    result.discount = (1 - result.price / result.fullPrice) * 100
     result.review = @review($)
     result.instore = @instore($)
+    result.benefits = []
     return result
   title: (selector) ->
   price: (selector) ->
@@ -35,11 +37,13 @@ class Parser
 class AmazonCNParser extends Parser
   title: (selector) ->
     return selector('#productTitle').text()
+  priceToInt: (text) ->
+    return parseInt(text.slice(1).replace(",", ""))
   price: (selector) ->
-    return selector('#priceblock_ourprice').text()
+    return @priceToInt(selector('#priceblock_ourprice').text())
   fullPrice: (selector) ->
-    return selector('#priceblock_ourprice').parent().parent().parent()
-      .children().first().children().last().text()
+    return @priceToInt(selector('#priceblock_ourprice').parent().parent()
+      .parent().children().first().children().last().text())
   review: (selector) ->
     classes = selector('#acrPopover').children().children()
       .children('.a-icon-star').attr('class')

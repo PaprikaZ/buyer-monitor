@@ -63,7 +63,7 @@ printHelp = function() {
 listHandler = function() {
   console.log("Products monitored:");
   JSON.parse(fs.readFileSync(productFile)).forEach(function(elt, index, err) {
-    var output, _base;
+    var output;
     output = util.format("id %s site %s ", elt.id, elt.site);
     if (elt.price) {
       output += util.format("price %s %s ", elt.price.compare, elt.price.target);
@@ -72,9 +72,7 @@ listHandler = function() {
       output += util.format("discount %s %s\%off ", elt.discount.compare, elt.discount.target);
     }
     if (elt.benefit) {
-      output += util.format("benefit match \/%s\/%s", elt.benefit.regex, typeof (_base = elt.benefit).ignoreCase === "function" ? _base.ignoreCase({
-        "i": ""
-      }) : void 0);
+      output += util.format("benefit match \/%s\/%s", elt.benefit.regex, elt.benefit.option);
     }
     console.log(output);
   });
@@ -129,7 +127,7 @@ addHandler = function(argv) {
         matches = remaining[0].match(regex);
         record.benefit = {
           regex: matches[1],
-          ignoreCase: matches[2] === "i"
+          option: matches[2]
         };
         return iter(remaining.slice(1));
       } else {
@@ -216,12 +214,11 @@ resetHandler = function() {
 parser = module.exports;
 
 parser.parse = function(argv, launch) {
-  console.log(argv);
   if (argv.length === 0) {
     launch();
   } else if (argv[0] === "add" && 1 < argv.length) {
     addHandler(argv.slice(1));
-  } else if (argv[0] === "remove") {
+  } else if (argv[0] === "remove" && 1 < argv.length) {
     removeHandler(argv.slice(1));
   } else if (argv[0] === "list" && argv.length === 1) {
     listHandler();

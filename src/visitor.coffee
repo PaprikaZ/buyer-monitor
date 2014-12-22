@@ -39,7 +39,8 @@ class Visitor
     return
   parsePage: (html) ->
   pushQueue: (result) ->
-    client.lpush(pushQueueKey, JSON.stringify(result))
+    if @seed.verdict(result)
+      client.lpush(pushQueueKey, JSON.stringify(result))
     return
   pushRecord: (record) ->
     client.lpush(historyKey, JSON.stringify(record))
