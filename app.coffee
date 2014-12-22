@@ -19,8 +19,8 @@ launchMonitor = ->
   asyncParallelRequests = ->
     async.parallel(monitorSeeds.map((seed) ->
       return ->
-        v = visitor.select(seed.siteUrl)
-        v.visit(seed.url)
+        v = visitor.select(seed)
+        v.visit()
         return
       ), (err) ->
         console.log(err)

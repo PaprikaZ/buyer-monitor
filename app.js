@@ -29,8 +29,8 @@ launchMonitor = function() {
     async.parallel(monitorSeeds.map(function(seed) {
       return function() {
         var v;
-        v = visitor.select(seed.siteUrl);
-        v.visit(seed.url);
+        v = visitor.select(seed);
+        v.visit();
       };
     }), function(err) {
       console.log(err);

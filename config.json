@@ -3,6 +3,7 @@
   "redisHost": "127.0.0.1",
   "redisPort": 6379,
   "redisRecordDBIndex": 0,
-  "redisPushMsgQueueDBIndex": 1,
-  "redisGetMsgQueueDBIndex": 2
+  "redisHistoryKey": "history",
+  "redisPushQueueKey": "push_queue",
+  "redisPullQueueKey": "pull_queue"
 }

@@ -31,7 +31,7 @@ module.exports = (id, siteUrl) ->
   targetSite = getSiteByUrl(siteUrl)
   return {
     id: id
-    siteUrl: siteUrl
+    site: siteUrl
     url: targetSite.generateProductUrl(id)
   }
 
