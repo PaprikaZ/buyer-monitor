@@ -8,7 +8,7 @@ module.exports.newClient = ->
   client = redis.createClient(redisPort, redisHost)
   client.select(redisRecordDBIndex, (err, res) ->
     if not err
-      logger.info("redis select %s %s", redisRecordDBIndex, res)
+      logger.debug("redis select %s %s", redisRecordDBIndex, res)
     else
       logger.error("redis select %s failed, %s", redisRecordDBIndex, err)
     return
@@ -17,5 +17,6 @@ module.exports.newClient = ->
     logger.error("visitor record client caught error, %s", err)
     return
   )
-  logger.info("redis record client connect success")
+  logger.debug("redis record client connect success")
   return client
+module.exports.redisPrint = redis.print

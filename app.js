@@ -38,9 +38,8 @@ verifyUserTokens = function(callback) {
       counter = accessTokens.length;
       return function() {
         counter -= 1;
-        logger.info("token %s verify ok", shortToken);
         if (counter === 0) {
-          logger.info("all token verify done.");
+          logger.info("all access tokens verify done.");
           callback();
         }
       };
@@ -54,6 +53,13 @@ verifyUserTokens = function(callback) {
         logger.error("error: %s", err);
         logger.error("account access token verify caught failed, exit.");
         process.exit();
+      } else if (res.statusCode === 401) {
+        accessTokens = accessTokens.filter(function(elt) {
+          return elt !== token;
+        });
+        logger.warn("token %s is invalid, removed.", shortToken);
+        logger.warn("status code: %s", res.statusCode);
+        logger.warn("error message: %s", body);
       } else {
         logger.warn("token %s verify response error", shortToken);
         logger.warn("status code: %s", res.statusCode);
@@ -61,16 +67,17 @@ verifyUserTokens = function(callback) {
       }
     });
   };
-  logger.info("access token verifying ...");
+  logger.info("user access tokens verifying ...");
   accessTokens.map(verifyToken);
 };
 
 launchMonitor = function() {
-  var async, asyncParallelRequests, client, config, db, delaySeed, iterate, monitorInterval, pushQueueKey, seed, seeds, visit, visitor;
+  var async, asyncParallelRequests, client, config, db, delaySeed, iterate, monitorInterval, pushQueueKey, redisPrint, seed, seeds, visit, visitor;
   seed = rootRequire("src/seed.js");
   seeds = JSON.parse(fs.readFileSync(path.join(__dirname, "product.json"))).map(function(item) {
     return seed(item);
   });
+  logger.info("load seeds ok.");
   delaySeed = function(id, site) {
     var resendDelay;
     resendDelay = rootRequire("src/config.js").resendDelay;
@@ -97,26 +104,36 @@ launchMonitor = function() {
     v.visit();
   };
   asyncParallelRequests = function() {
-    async.map(seeds, visit, function(err, results) {
-      logger.error(err);
-    });
+    if (seeds.length !== 0) {
+      async.map(seeds, visit, function(err, results) {
+        logger.error(err);
+      });
+    }
   };
   config = rootRequire("src/config.js");
   pushQueueKey = config.redisPushQueueKey;
   db = rootRequire("src/db_client.js");
   client = db.newClient();
+  redisPrint = db.redisPrint;
+  client.del(pushQueueKey);
+  logger.info("Launcher clear push queue ok.");
   iterate = function() {
     var iter;
     iter = function() {
-      var item;
-      item = JSON.parse(client.rpop(pushQueueKey));
-      if (item.id && item.site) {
-        delaySeed(item.id, item.site);
-        iter();
-      }
+      return client.rpop(pushQueueKey, function(err, res) {
+        var item;
+        item = JSON.parse(res);
+        logger.debug("pop delay id %s site %s", item.id, item.site);
+        if (item) {
+          delaySeed(item.id, item.site);
+          iter();
+        } else {
+          logger.debug("iteration done.");
+          asyncParallelRequests();
+        }
+      });
     };
     iter();
-    asyncParallelRequests();
   };
   asyncParallelRequests();
   return setInterval(iterate, monitorInterval);

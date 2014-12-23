@@ -28,7 +28,7 @@ assembleMessengeBody = (result) ->
 class Messenger
   constructor: ->
   push: (result) ->
-    console.log("product id %s is pushed", result.id)
+    logger.debug("id %s site %s to be pushed", result.id, result.site)
     messenge =
       type: 'note'
       title: assembleMessengeTitle(result)

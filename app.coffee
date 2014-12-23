@@ -24,9 +24,8 @@ verifyUserTokens = (callback) ->
       counter = accessTokens.length
       return ->
         counter -= 1
-        logger.info("token %s verify ok", shortToken)
         if counter == 0
-          logger.info("all token verify done.")
+          logger.info("all access tokens verify done.")
           callback()
         return
     printSuccess = makeVerifyOK()
@@ -39,6 +38,12 @@ verifyUserTokens = (callback) ->
         logger.error("error: %s", err)
         logger.error("account access token verify caught failed, exit.")
         process.exit()
+      else if res.statusCode == 401
+        accessTokens = accessTokens.filter((elt) ->
+          return elt != token)
+        logger.warn("token %s is invalid, removed.", shortToken)
+        logger.warn("status code: %s", res.statusCode)
+        logger.warn("error message: %s", body)
       else
         logger.warn("token %s verify response error", shortToken)
         logger.warn("status code: %s", res.statusCode)
@@ -47,7 +52,7 @@ verifyUserTokens = (callback) ->
     )
     return
 
-  logger.info("access token verifying ...")
+  logger.info("user access tokens verifying ...")
   accessTokens.map(verifyToken)
   return
 
@@ -57,7 +62,8 @@ launchMonitor = ->
     fs.readFileSync(path.join(__dirname, "product.json"))).map((item) ->
       return seed(item)
   )
-  
+  logger.info("load seeds ok.")
+
 
   delaySeed = (id, site) ->
     resendDelay = rootRequire("src/config.js").resendDelay
@@ -85,26 +91,32 @@ launchMonitor = ->
     v.visit()
     return
   asyncParallelRequests = ->
-    async.map(seeds, visit, (err, results) ->
-      logger.error(err)
-      return
-    )
+    if seeds.length != 0
+      async.map(seeds, visit, (err, results) ->
+        logger.error(err)
+        return)
     return
 
   config = rootRequire("src/config.js")
   pushQueueKey = config.redisPushQueueKey
   db = rootRequire("src/db_client.js")
   client = db.newClient()
+  redisPrint = db.redisPrint
+  client.del(pushQueueKey)
+  logger.info("Launcher clear push queue ok.")
   iterate = ->
     iter = ->
-      item = JSON.parse(client.rpop(pushQueueKey))
-      if item.id and item.site
-        delaySeed(item.id, item.site)
-        iter()
-      return
-
+      client.rpop(pushQueueKey, (err, res) ->
+        item = JSON.parse(res)
+        logger.debug("pop delay id %s site %s", item.id, item.site)
+        if item
+          delaySeed(item.id, item.site)
+          iter()
+        else
+          logger.debug("iteration done.")
+          asyncParallelRequests()
+        return)
     iter()
-    asyncParallelRequests()
     return
 
   asyncParallelRequests()

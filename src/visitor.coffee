@@ -48,11 +48,10 @@ class Visitor
     console.log(result)
     return result
   pushQueue: (result) ->
-    console.log("push queue enter")
     if @seed.verdict(result)
-      console.log("verdict enter")
       messenger = new Messenger()
       messenger.push(result)
+      logger.debug("push delay id %s site %s", result.id, result.site)
       client.lpush(pushQueueKey, JSON.stringify({id: result.id, site:result.site}))
     return
   pushRecord: (record) ->
