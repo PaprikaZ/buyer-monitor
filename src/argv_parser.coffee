@@ -59,7 +59,7 @@ printHelp = ->
 
 listHandler = ->
   console.log("Products monitored:")
-  JSON.parse(fs.readFileSync(productFile)).forEach((elt, index, err) ->
+  JSON.parse(fs.readFileSync(productFile)).forEach((elt, index, arr) ->
     output = util.format("id %s site %s ", elt.id, elt.site)
     if elt.price
       output += util.format( "price %s %s ", elt.price.compare, elt.price.target)
@@ -73,22 +73,24 @@ listHandler = ->
     console.log(output)
     return
   )
-  console.log("done.")
+  console.log("list done.")
   return
 
 addHandler = (argv) ->
   writeRecord = (record) ->
     products = JSON.parse(fs.readFileSync(productFile))
-    duplicatedProducts = products.filter((elt, index, err) ->
-      return elt.id == record.id and elt.site == record.site
+    noDuplicatedProducts = products.filter((elt, index, arr) ->
+      return elt.id != record.id or elt.site != record.site
     )
     
-    if duplicatedProducts.length == 0
+    if noDuplicatedProducts.length == products.length
       products.push(record)
       fs.writeFileSync(productFile, JSON.stringify(products))
-      console.log("done.")
+      console.log("add done.")
     else
-      console.log("product id %s, site %s already existed", record.id, record.site)
+      noDuplicatedProducts.push(record)
+      fs.writeFileSync(productFile, JSON.stringify(noDuplicatedProducts))
+      console.log("product id %s, site %s update done.", record.id, record.site)
     return
 
   analyze = ->
@@ -179,7 +181,7 @@ removeHandler = (argv) ->
   products = JSON.parse(fs.readFileSync(productFile))
   fs.writeFileSync(
     productFile,
-    JSON.stringify(products.filter((elt, index, err) ->
+    JSON.stringify(products.filter((elt, index, arr) ->
       if site
         return elt.id != id or elt.site != site
       else
@@ -187,7 +189,7 @@ removeHandler = (argv) ->
       )
     )
   )
-  console.log("done.")
+  console.log("remove done.")
   return
 
 resetHandler = ->

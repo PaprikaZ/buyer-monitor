@@ -66,7 +66,7 @@ printHelp = function() {
 
 listHandler = function() {
   console.log("Products monitored:");
-  JSON.parse(fs.readFileSync(productFile)).forEach(function(elt, index, err) {
+  JSON.parse(fs.readFileSync(productFile)).forEach(function(elt, index, arr) {
     var output;
     output = util.format("id %s site %s ", elt.id, elt.site);
     if (elt.price) {
@@ -80,23 +80,25 @@ listHandler = function() {
     }
     console.log(output);
   });
-  console.log("done.");
+  console.log("list done.");
 };
 
 addHandler = function(argv) {
   var analyze, writeRecord;
   writeRecord = function(record) {
-    var duplicatedProducts, products;
+    var noDuplicatedProducts, products;
     products = JSON.parse(fs.readFileSync(productFile));
-    duplicatedProducts = products.filter(function(elt, index, err) {
-      return elt.id === record.id && elt.site === record.site;
+    noDuplicatedProducts = products.filter(function(elt, index, arr) {
+      return elt.id !== record.id || elt.site !== record.site;
     });
-    if (duplicatedProducts.length === 0) {
+    if (noDuplicatedProducts.length === products.length) {
       products.push(record);
       fs.writeFileSync(productFile, JSON.stringify(products));
-      console.log("done.");
+      console.log("add done.");
     } else {
-      console.log("product id %s, site %s already existed", record.id, record.site);
+      noDuplicatedProducts.push(record);
+      fs.writeFileSync(productFile, JSON.stringify(noDuplicatedProducts));
+      console.log("product id %s, site %s update done.", record.id, record.site);
     }
   };
   analyze = function() {
@@ -202,14 +204,14 @@ removeHandler = function(argv) {
   };
   _ref = analyze(), id = _ref[0], site = _ref[1];
   products = JSON.parse(fs.readFileSync(productFile));
-  fs.writeFileSync(productFile, JSON.stringify(products.filter(function(elt, index, err) {
+  fs.writeFileSync(productFile, JSON.stringify(products.filter(function(elt, index, arr) {
     if (site) {
       return elt.id !== id || elt.site !== site;
     } else {
       return elt.id !== id;
     }
   })));
-  console.log("done.");
+  console.log("remove done.");
 };
 
 resetHandler = function() {
