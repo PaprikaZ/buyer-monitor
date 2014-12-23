@@ -38,7 +38,7 @@ loadPriceVerdict = (price, seed) ->
     seed.verdictPrice = (x) ->
       return x == price.target
   else
-    console.log("unknown price verdict word %s", price.compare)
+    logger.error("unknown price verdict word %s", price.compare)
     process.exit()
   return
 
@@ -53,7 +53,7 @@ loadDiscountVerdict = (discount, seed) ->
     seed.verdictDiscount = (x) ->
       return x == discount.target
   else
-    console.log("unknown discount verdict %s", discount.compare)
+    logger.error("unknown discount verdict %s", discount.compare)
     process.exit()
   return
 
@@ -70,7 +70,7 @@ loadReviewVerdict = (review, seed) ->
     seed.verdictReview = (x) ->
       return x == score
   else
-    console.log("unknown review verdict '%s %s'", review.comapre review.target)
+    logger.error("unknown review verdict '%s %s'", review.comapre review.target)
     process.exit()
   return
 

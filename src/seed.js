@@ -61,7 +61,7 @@ loadPriceVerdict = function(price, seed) {
       return x === price.target;
     };
   } else {
-    console.log("unknown price verdict word %s", price.compare);
+    logger.error("unknown price verdict word %s", price.compare);
     process.exit();
   }
 };
@@ -80,7 +80,7 @@ loadDiscountVerdict = function(discount, seed) {
       return x === discount.target;
     };
   } else {
-    console.log("unknown discount verdict %s", discount.compare);
+    logger.error("unknown discount verdict %s", discount.compare);
     process.exit();
   }
 };
@@ -102,7 +102,7 @@ loadReviewVerdict = function(review, seed) {
       return x === score;
     };
   } else {
-    console.log("unknown review verdict '%s %s'", review.comapre(review.target));
+    logger.error("unknown review verdict '%s %s'", review.comapre(review.target));
     process.exit();
   }
 };
