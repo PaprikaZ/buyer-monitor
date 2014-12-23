@@ -10,16 +10,19 @@ assembleMessengeTitle = (result) ->
   return title
 
 assembleMessengeBody = (result) ->
-  body = util.format("title: %s\n", result.title)
-  body += util.format("url: %s\n", result.url)
-  body += util.format("price: %s  full price: %s\n", result.price, result.fullPrice)
-  body += util.format("discount: %s\% OFF\n", Math.round(result.discount))
-  body += util.format("review: %s\n", result.review)
-  body += util.format("in store: %s\n", result.instore? "yes" : "no")
-  result.benefits.forEach((benefit, idx) ->
-    body += util.format("benefit%s: %s\n", idx, benefit)
-    return
-  )
+  body =  util.format("Title: %s\n", result.title)
+  body += util.format("Url: %s\n", result.url)
+  body += util.format("Price: %s        full price: %s\n", result.price, result.fullPrice)
+  body += util.format("Discount: %s\% OFF\n", Math.round(result.discount))
+  body += util.format("Review: %s\n", result.review)
+  body += util.format("Instore: %s\n", result.instore? "yes" : "no")
+  if 0 < result.benefits.length
+    result.benefits.forEach((benefit, idx) ->
+      body += util.format("Benefit%s: %s\n", idx, benefit)
+      return
+    )
+  else
+    body += "Benefits: none\n"
   return body
 
 class Messenger
