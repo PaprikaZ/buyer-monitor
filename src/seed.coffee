@@ -57,6 +57,23 @@ loadDiscountVerdict = (discount, seed) ->
     process.exit()
   return
 
+loadReviewVerdict = (review, seed) ->
+  reviewStar = ["zero", "half", "one", "one-half", "two", "two-half", "three", "three-half", "four", "four-half", "five"]
+  score = reviewStar.indexOf(review.target)
+  if review.compare == "above" and score != -1
+    seed.verdictReview = (x) ->
+      return score < x
+  else if review.compare == "under"
+    seed.verdictReview = (x) ->
+      return x < score
+  else if review.compare == "equal"
+    seed.verdictReview = (x) ->
+      return x == score
+  else
+    console.log("unknown review verdict '%s %s'", review.comapre review.target)
+    process.exit()
+  return
+
 loadBenefitVerdict = (benefit, seed) ->
   regex = new Regex(benefit.regex, benefit.option)
   seed.verdictBenefits = (benefits) ->
@@ -69,17 +86,21 @@ loadVerdict = (item, seed) ->
     loadPriceVerdict(item.price, seed)
   if item.discount
     loadDiscountVerdict(item.discount, seed)
+  if item.review
+    loadReviewVerdict(item.review, seed)
   if item.benefit
     loadBenefitVerdict(item.benefit, seed)
 
   return (result) ->
     result = false
-    if reulst or @verdictPrice
-      result = result or @verdictPrice(result.price)
-    if result or @verdictDiscount
-      result = result or @verdictDiscount(result.discount)
-    if result or @verdictBenefits
-      result = result or @verdictBenefits(result.benefits)
+    if not result and @verdictPrice
+      result = @verdictPrice(result.price)
+    if not result and @verdictDiscount
+      result = @verdictDiscount(result.discount)
+    if not result and @verdictReview
+      result = @verdictReview(result.review)
+    if not result and @verdictBenefits
+      result = @verdictBenefits(result.benefits)
     return result
 
 module.exports = (item) ->

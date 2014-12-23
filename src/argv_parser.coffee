@@ -36,6 +36,10 @@ printHelp = ->
   console.log("    > price discount above 0.8")
   console.log("    > price discount above 20")
   console.log("")
+  console.log("    And user review based on five star convention")
+  console.log("    > review above four star")
+  console.log("    > review above four-half star")
+  console.log("")
   console.log("    Also benefit available, support regex")
   console.log("    > benefit /buy two with one off/")
   console.log("")
@@ -105,6 +109,14 @@ addHandler = (argv) ->
         reportUnknownArg()
       return
 
+    reviewIter = (remaining) ->
+      if remaining[0] == "above"
+        record.review = {compare: "above", target: remaining[1]}
+        return iter(remaining.slice(2))
+      else
+        reportUnknownArg()
+      return
+
     benefitIter = (remaining) ->
       regex = /^\/(.*)\/(i?)$/
       if regex.test(remaining[0])
@@ -128,6 +140,8 @@ addHandler = (argv) ->
         priceIter(remaining.slice(1))
       else if remaining[0] == "discount"
         discountIter(remaining.slice(1))
+      else if remaining[0] == "review"
+        reviewIter(remaining.slice(1))
       else if remaining[0] == "benefit"
         benefitIter(remaining.slice(1))
       else
