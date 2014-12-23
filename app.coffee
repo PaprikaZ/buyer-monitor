@@ -1,5 +1,5 @@
-path = require("path")
 fs = require("fs")
+path = require("path")
 global.rootRequire = (name) ->
   return require(path.join(__dirname, name))
 
@@ -34,14 +34,16 @@ verifyUserTokens = (callback) ->
     request.get(options, (err, res, body) ->
       if not err and res.statusCode == 200
         return printSuccess()
-      else
-        logger.warn("token %s verify failed", shortToken)
-        logger.warn("error: %s", err)
-        logger.warn("status code: %s", res.statusCode)
-        logger.warn("failure message: %s", body)
+      else if err
+        logger.error("token %s verify caught request error.", shortToken)
+        logger.error("error: %s", err)
         logger.error("account access token verify caught failed, exit.")
         process.exit()
-        return
+      else
+        logger.warn("token %s verify response error", shortToken)
+        logger.warn("status code: %s", res.statusCode)
+        logger.warn("error message: %s", body)
+      return
     )
     return
 
@@ -51,29 +53,62 @@ verifyUserTokens = (callback) ->
 
 launchMonitor = ->
   seed = rootRequire("src/seed.js")
-  monitorSeeds = JSON.parse(
+  seeds = JSON.parse(
     fs.readFileSync(path.join(__dirname, "product.json"))).map((item) ->
       return seed(item)
   )
   
+
+  delaySeed = (id, site) ->
+    resendDelay = rootRequire("src/config.js").resendDelay
+    seeds = seeds.filter((elt) ->
+      return elt.id != id or elt.site != site
+    )
+    seeds.filter((elt) ->
+      return elt.id == id and elt.site == site
+    ).forEach((elt) ->
+      pushSeedBack= ->
+        seeds.push(elt)
+        return
+      logger.info("product id %s site %s delayed.", elt.id, elt.site)
+      setTimeout(pushSeedBack, resendDelay)
+      return
+    )
+    return
+  
+
   async = require("async")
   visitor = rootRequire("src/visitor.js")
+  monitorInterval = rootRequire("src/config.js").monitorInterval
   visit = (seed) ->
     v = visitor.select(seed)
     v.visit()
     return
   asyncParallelRequests = ->
-    async.map(monitorSeeds, visit, (err, results) ->
+    async.map(seeds, visit, (err, results) ->
       logger.error(err)
       return
     )
     return
-  
-  monitorInterval = rootRequire("src/config.js").monitorInterval
+
+  config = rootRequire("src/config.js")
+  pushQueueKey = config.redisPushQueueKey
+  db = rootRequire("src/db_client.js")
+  client = db.newClient()
+  iterate = ->
+    iter = ->
+      item = JSON.parse(client.rpop(pushQueueKey))
+      if item.id and item.site
+        delaySeed(item.id, item.site)
+        iter()
+      return
+
+    iter()
+    asyncParallelRequests()
+    return
 
   asyncParallelRequests()
-  setInterval(asyncParallelRequests, monitorInterval)
-  #messager startup here
+  setInterval(iterate, monitorInterval)
 
 launch = ->
   verifyUserTokens(launchMonitor)

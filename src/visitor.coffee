@@ -1,34 +1,37 @@
 request = require("request")
-config = rootRequire("src/config.js")
 selectParser = rootRequire("src/parser.js").select
+db = rootRequire("src/db_client.js")
+Messenger = rootRequire("src/messenger.js")
 
-redisPort = config.redisPort
-redisHost = config.redisHost
-redisRecordDBIndex = config.redisRecordDBIndex
+config = rootRequire("src/config.js")
 historyKey = config.redisHistoryKey
 pushQueueKey = config.redisPushQueueKey
-
-redis = require("redis")
-client = redis.createClient(redisPort, redisHost)
-client.select(redisRecordDBIndex, (err, res) ->
-  if not err
-    logger.info("redis select %s %s", redisRecordDBIndex, res)
-  else
-    logger.error("redis select %s failed, %s", redisRecordDBIndex, err)
-  return
-)
-client.on("error", (err) ->
-  logger.error("visitor record client caught error, %s", err)
-  return
-)
-logger.info("redis record client connect success")
+client = db.newClient()
 
 class Visitor
   constructor: (seed) ->
     @seed = seed
   visit: ->
-  failRequestHandler: ->
-  errorResponseHandler: ->
+    self = this
+    request(self.seed.url, (err, res, body) ->
+      if not err and res.statusCode == 200
+        self.processPage(body)
+      else if res.statusCode != 200
+        self.errorResponseHandler(err, res, body)
+      else
+        self.failedRequestHandler(err, res, body)
+      return
+    )
+    return
+  failedRequestHandler: (err, res, body) ->
+    logger.error("%s visitor request failed.", @constructor.name)
+    logger.error("err: %s", err)
+    return
+  errorResponseHandler: (err, res, body) ->
+    logger.error("%s visitor response error.", @constructor.name)
+    logger.error("response status code: %s", res.statusCode)
+    logger.error("response body: %s", body)
+    return
   processPage: (html) ->
     date = new Date()
     result = @parsePage(html)
@@ -38,37 +41,25 @@ class Visitor
     @pushRecord(result)
     return
   parsePage: (html) ->
-  pushQueue: (result) ->
-    if @seed.verdict(result)
-      client.lpush(pushQueueKey, JSON.stringify(result))
-    return
-  pushRecord: (record) ->
-    client.lpush(historyKey, JSON.stringify(record))
-    return
-
-class AmazonCNVisitor extends Visitor
-  visit: ->
-    self = this
-    request(self.seed.url, (err, res, body) ->
-      if err
-        self.failRequestHandler(err, res)
-      else if res.statusCode != 200
-        self.errorResponseHandler(err, res)
-      else
-        self.parsePage(body)
-      return
-    )
-    return
-  
-  failRequestHandler: (err, res) ->
-  errorResponseHandler: (err, res) ->
-  parsePage: (html) ->
     parser = selectParser(@seed.site)
     result = id: @seed.id, site: @seed.site, url: @seed.url
     for attr, val of parser.parse(html)
       result[attr] = val
     console.log(result)
     return result
+  pushQueue: (result) ->
+    console.log("push queue enter")
+    if @seed.verdict(result)
+      console.log("verdict enter")
+      messenger = new Messenger()
+      messenger.push(result)
+      client.lpush(pushQueueKey, JSON.stringify({id: result.id, site:result.site}))
+    return
+  pushRecord: (record) ->
+    client.lpush(historyKey, JSON.stringify(record))
+    return
+
+class AmazonCNVisitor extends Visitor
 
 class AmazonUSVisitor extends Visitor
 
