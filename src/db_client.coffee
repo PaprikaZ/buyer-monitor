@@ -3,8 +3,6 @@ config = rootRequire("src/config.js")
 redisPort = config.redisPort
 redisHost = config.redisHost
 redisRecordDBIndex = config.redisRecordDBIndex
-historyKey = config.redisHistoryKey
-pushQueueKey = config.redisPushQueueKey
 
 module.exports.newClient = ->
   client = redis.createClient(redisPort, redisHost)
