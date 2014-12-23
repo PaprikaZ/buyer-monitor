@@ -92,16 +92,16 @@ loadVerdict = (item, seed) ->
     loadBenefitVerdict(item.benefit, seed)
 
   return (result) ->
-    result = false
-    if not result and @verdictPrice
-      result = @verdictPrice(result.price)
-    if not result and @verdictDiscount
-      result = @verdictDiscount(result.discount)
-    if not result and @verdictReview
-      result = @verdictReview(result.review)
-    if not result and @verdictBenefits
-      result = @verdictBenefits(result.benefits)
-    return result
+    ret = false
+    if not ret and @verdictPrice
+      ret = @verdictPrice(result.price)
+    if not ret and @verdictDiscount
+      ret = @verdictDiscount(result.discount)
+    if not ret and @verdictReview
+      ret = @verdictReview(result.review)
+    if not ret and @verdictBenefits
+      ret = @verdictBenefits(result.benefits)
+    return ret
 
 module.exports = (item) ->
   seed = {id: item.id, site: item.site}

@@ -131,20 +131,21 @@ loadVerdict = function(item, seed) {
     loadBenefitVerdict(item.benefit, seed);
   }
   return function(result) {
-    result = false;
-    if (!result && this.verdictPrice) {
-      result = this.verdictPrice(result.price);
+    var ret;
+    ret = false;
+    if (!ret && this.verdictPrice) {
+      ret = this.verdictPrice(result.price);
     }
-    if (!result && this.verdictDiscount) {
-      result = this.verdictDiscount(result.discount);
+    if (!ret && this.verdictDiscount) {
+      ret = this.verdictDiscount(result.discount);
     }
-    if (!result && this.verdictReview) {
-      result = this.verdictReview(result.review);
+    if (!ret && this.verdictReview) {
+      ret = this.verdictReview(result.review);
     }
-    if (!result && this.verdictBenefits) {
-      result = this.verdictBenefits(result.benefits);
+    if (!ret && this.verdictBenefits) {
+      ret = this.verdictBenefits(result.benefits);
     }
-    return result;
+    return ret;
   };
 };
 
