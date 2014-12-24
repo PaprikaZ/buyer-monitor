@@ -1,4 +1,1 @@
-Monitor = require("./lib/monitor.js")
-module.exports = Monitor
-
-Monitor.launch()
+require('./lib/monitor.js').launch()
