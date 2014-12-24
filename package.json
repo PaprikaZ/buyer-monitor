@@ -1,25 +1,44 @@
 {
   "name": "ebuy_monitor",
   "description": "Personal ebuy price monitor tool",
+  "main": "./app.js",
+  "author": {
+    "name": "Zhu Jie <sms.extreme@gmail.com>"
+  },
   "version": "0.0.1",
-  "author": "Zhu Jie <sms.extreme@gmail.com>",
-  "contributors": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PaprikaZ/ebuy_monitor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PaprikaZ/ebuy_monitor/issues"
+  },
+  "licenses": [
+    {
+      "type": "GPL2",
+      "url": "https://github.com/PaprikaZ/ebuy_monitor/raw/master/LICENSE"
+    }
+  ],
   "dependencies": {
-    "request": "*",
-    "cheerio": "*"
+    "async": ">0.0.0",
+    "request": ">0.0.0",
+    "cheerio": ">0.0.0",
+    "winston": ">0.0.0"
   },
   "devDependencies": {
-    "minimist": "*",
-    "request": "*",
-    "cheerio": "*",
-    "winston": "*",
-    "async": "*"
+    "async": ">0.0.0",
+    "request": ">0.0.0",
+    "cheerio": ">0.0.0",
+    "winston": ">0.0.0",
+    "mocha": ">0.0.0",
+    "should": ">0.0.0"
   },
-  "keywords": ["personal", "ebuy", "monitor"],
-  "repository": "https://github.com/PaprikaZ/ebuy_monitor.git",
-  "main": "main",
+  "keywords": [
+    "personal",
+    "ebuy",
+    "monitor"
+  ],
   "engines": {
     "node": "*"
   }
 }
-
