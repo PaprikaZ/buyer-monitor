@@ -1,22 +1,21 @@
-fs = require("fs")
-path = require("path")
-global.rootRequire = (name) ->
-  return require(path.join(__dirname, name))
-
-logger = require('winston')
-logger.add(logger.transports.File, filename: '/tmp/ebuy_monitor.log')
-global.logger = logger
+fs = require('fs')
+path = require('path')
+async = require('async')
+request = require('request')
+config = require('./config.js')
+Visitor = require('./visitor.js')
+Seed = require('./seed.js')
+DBClient = require('./db_client.js')
+productFile = '../product.json'
 
 verifyUserTokens = (callback) ->
-  request = require("request")
-  userServiceUrl = rootRequire("src/config.js").userServiceUrl
-  accessTokens = rootRequire("src/config.js").accounts.map((account) ->
+  accessTokens = config.accounts.map((account) ->
     return account.accessToken
   )
 
   verifyToken = (token) ->
     options =
-      url: userServiceUrl
+      url: config.userServiceUrl
       auth:
         user: token
     shortToken = token.slice(0, 7)
@@ -35,7 +34,7 @@ verifyUserTokens = (callback) ->
         return printSuccess()
       else if err
         logger.error("token %s verify caught request error.", shortToken)
-        logger.error("error: %s", err)
+        logger.error("%s", err)
         logger.error("account access token verify caught failed, exit.")
         process.exit()
       else if res.statusCode == 401
@@ -57,16 +56,15 @@ verifyUserTokens = (callback) ->
   return
 
 launchMonitor = ->
-  seed = rootRequire("src/seed.js")
   seeds = JSON.parse(
-    fs.readFileSync(path.join(__dirname, "product.json"))).map((item) ->
-      return seed(item)
+    fs.readFileSync(path.join(__dirname, productFile))).map((item) ->
+      return new Seed(item)
   )
   logger.info("load seeds ok.")
 
 
   delaySeed = (id, site) ->
-    resendDelay = rootRequire("src/config.js").resendDelay
+    resendDelay = config.resendDelay
     seeds = seeds.filter((elt) ->
       return elt.id != id or elt.site != site
     )
@@ -83,11 +81,8 @@ launchMonitor = ->
     return
   
 
-  async = require("async")
-  visitor = rootRequire("src/visitor.js")
-  monitorInterval = rootRequire("src/config.js").monitorInterval
   visit = (seed) ->
-    v = visitor.select(seed)
+    v = Visitor(seed)
     v.visit()
     return
   asyncParallelRequests = ->
@@ -97,16 +92,17 @@ launchMonitor = ->
         return)
     return
 
-  config = rootRequire("src/config.js")
-  pushQueueKey = config.redisPushQueueKey
-  db = rootRequire("src/db_client.js")
-  client = db.newClient()
-  redisPrint = db.redisPrint
-  client.del(pushQueueKey)
+  client = DBClient()
+  client.del(config.pushQueueKey, (err, res) ->
+    if err
+      logger.error("Clear push queue %s failed.", config.pushQueueKey)
+      logger.error("%s", err)
+      process.exit()
+    return)
   logger.info("Launcher clear push queue ok.")
   iterate = ->
     iter = ->
-      client.rpop(pushQueueKey, (err, res) ->
+      client.rpop(config.pushQueueKey, (err, res) ->
         item = JSON.parse(res)
         logger.debug("pop delay id %s site %s", item.id, item.site)
         if item
@@ -120,11 +116,19 @@ launchMonitor = ->
     return
 
   asyncParallelRequests()
-  setInterval(iterate, monitorInterval)
+  setInterval(iterate, config.monitorInterval)
 
 launch = ->
   verifyUserTokens(launchMonitor)
   return
 
-argvParser = rootRequire("src/argv_parser.js")
-argvParser.parse(process.argv.slice(2), launch)
+module.exports.launch = ->
+  require('./argv_parser.js').parse(process.argv.slice(2), launch)
+  return
+module.exports.config = require('./config.js')
+module.exports.argvParser = require('./argv_parser.js')
+module.exports.DBClient = require('./db_client.js')
+module.exports.Messenger = require('./messenger.js')
+module.exports.PageParser = require('./page_parser.js')
+module.exports.Seed = require('./seed.js')
+module.exports.Visitor = require('./visitor.js')

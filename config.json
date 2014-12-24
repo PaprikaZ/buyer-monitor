@@ -2,6 +2,8 @@
   "monitorInterval": 900000,
   "resendDelay": 86400000,
 
+  "logFile": "./ebuy_monitor.log",
+
   "redisHost": "127.0.0.1",
   "redisPort": 6379,
   "redisRecordDBIndex": 0,

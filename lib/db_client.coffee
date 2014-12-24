@@ -1,16 +1,14 @@
-redis = require("redis")
-config = rootRequire("src/config.js")
-redisPort = config.redisPort
-redisHost = config.redisHost
+redis = require('redis')
+config = require('./config.js')
 redisRecordDBIndex = config.redisRecordDBIndex
 
-module.exports.newClient = ->
-  client = redis.createClient(redisPort, redisHost)
+module.exports = ->
+  client = redis.createClient(config.redisPort, config.redisHost)
   client.select(redisRecordDBIndex, (err, res) ->
-    if not err
-      logger.debug("redis select %s %s", redisRecordDBIndex, res)
-    else
+    if err
       logger.error("redis select %s failed, %s", redisRecordDBIndex, err)
+    else
+      logger.debug("redis select %s %s", redisRecordDBIndex, res)
     return
   )
   client.on("error", (err) ->
@@ -19,4 +17,3 @@ module.exports.newClient = ->
   )
   logger.debug("redis record client connect success")
   return client
-module.exports.redisPrint = redis.print

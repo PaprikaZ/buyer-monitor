@@ -1,12 +1,11 @@
-util = require("util")
-request = require("request")
+util = require('util')
+request = require('request')
+config = require('./config.js')
+accessTokens = config.accounts.map((account) ->
+  return account.accessToken)
 
-pushServiceUrl = rootRequire("src/config.js").pushServiceUrl
-accessTokens = rootRequire("src/config.js").accounts.map((account) ->
-  return account.accessToken
-)
 assembleMessengeTitle = (result) ->
-  title = util.format("id %s on site %s is available", result.id, result.site)
+  title = util.format("id %s on site %s meet your requirement", result.id, result.site)
   return title
 
 assembleMessengeBody = (result) ->
@@ -28,6 +27,7 @@ assembleMessengeBody = (result) ->
 class Messenger
   constructor: ->
   push: (result) ->
+    self = @
     logger.debug("id %s site %s to be pushed", result.id, result.site)
     messenge =
       type: 'note'
@@ -35,30 +35,31 @@ class Messenger
       body: assembleMessengeBody(result)
 
     accessTokens.map((token) ->
+      shortToken = token.slice(0, 7)
       postOptions =
-        url: pushServiceUrl
+        url: config.pushServiceUrl
         auth:
           user: token
         headers:
           'content-type': 'application/json'
         body: JSON.stringify(messenge)
+
       request.post(postOptions, (err, res, body) ->
-        shortToken = token.slice(0, 7)
         if not err and res.statusCode == 200
           logger.info("push message to user %s ok.", shortToken)
-        else if res.statusCode != 200
-          errorResponseHandler(shortToken, err, res, body)
+        else if not err and res.statusCode != 200
+          self.errorResponseHandler(shortToken, err, res, body)
         else
-          failedRequestHandler(shortToken, err, res, body)
+          self.failedRequestHandler(shortToken, err, res, body)
         return
       )
     )
     return
 
   errorResponseHandler: (token, err, res, body) ->
-    logger.error("messenger response error.")
-    logger.error("token %s response status code: %s", token, res.statusCode)
-    logger.error("token %s body: %s", token, body)
+    logger.warn("messenger response error.")
+    logger.warn("token %s response status code: %s", token, res.statusCode)
+    logger.warn("token %s body: %s", token, body)
     return
   failedRequestHandler: (token, err, res, body) ->
     logger.error("messenger request failed.")

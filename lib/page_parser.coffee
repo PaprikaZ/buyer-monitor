@@ -1,4 +1,4 @@
-cheerio = require("cheerio")
+cheerio = require('cheerio')
 
 review =
   fiveStar: 10
@@ -17,28 +17,42 @@ review =
 class Parser
   constructor: ->
   load: cheerio.load
+  mandatoryParseFields: ['title', 'price', 'fullPrice', 'review', 'instore', 'benefits']
+  mandatoryFields: ['title', 'price', 'fullPrice', 'discount', 'review', 'instore', 'benefits']
   parse: (html) ->
+    self = @
     $ = @load(html)
     result = {}
-    result.title = @title($)
-    result.price = @price($)
-    result.fullPrice = @fullPrice($)
+    @mandatoryParseFields.map((field) ->
+      result[field] = self[field]($)
+      return)
     result.discount = (1 - result.price / result.fullPrice) * 100
-    result.review = @review($)
-    result.instore = @instore($)
-    result.benefits = []
-    return result
+
+    allFieldOk = @mandatoryParseFields.every((field) ->
+      return field != null)
+    if allFieldOk
+      return result
+    else
+      return logger.error("%s parse page failed", @constructor.name)
+
   title: (selector) ->
+    return "unknown"
   price: (selector) ->
+    return -1
   fullPrice: (selector) ->
+    return -1
   review: (selector) ->
+    return zeroStar
   instore: (selector) ->
+    return false
+  benefits: (selector) ->
+    return []
 
 class AmazonCNParser extends Parser
   title: (selector) ->
     return selector('#productTitle').text()
   priceToInt: (text) ->
-    return parseInt(text.slice(1).replace(",", ""))
+    return parseInt(text.slice(1).replace(',', ''))
   price: (selector) ->
     return @priceToInt(selector('#priceblock_ourprice').text())
   fullPrice: (selector) ->
@@ -82,15 +96,12 @@ class AmazonUSParser extends Parser
 class AmazonJPParser extends Parser
 class JingdongParser extends Parser
 
-module.exports.select = (site) ->
+module.exports = (site) ->
   newParser =
     switch site
-      when "www.amazon.cn" then new AmazonCNParser()
-      when "www.amazon.com" then new AmazonUSParser()
-      when "www.amazon.co.jp" then new AmazonJPParser()
-      when "www.jd.com" then new JingdongParser()
-      else logger.warn(
-        "there is no available parser for site %s",
-        site
-      )
+      when 'www.amazon.cn' then new AmazonCNParser()
+      when 'www.amazon.com' then new AmazonUSParser()
+      when 'www.amazon.co.jp' then new AmazonJPParser()
+      when 'www.jd.com' then new JingdongParser()
+      else logger.error("no available page parser for site %s", site)
   return newParser

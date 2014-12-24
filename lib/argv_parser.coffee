@@ -1,9 +1,8 @@
-util = require("util")
-fs = require("fs")
-path = require("path")
-minimist = require("minimist")
+util = require('util')
+fs = require('fs')
+path = require('path')
+productFile = './product.json'
 
-productFile = path.join(__dirname, "../product.json")
 reportUnknownArg = ->
   console.log("Unknown arguments, please see help with 'node app.js help'")
   process.exit()
@@ -55,6 +54,7 @@ printHelp = ->
   console.log("  > node app.js help")
   console.log("")
   console.log("The monitor products located in product.json at root path.")
+  process.exit()
   return
 
 listHandler = ->
@@ -74,6 +74,7 @@ listHandler = ->
     return
   )
   console.log("list done.")
+  process.exit()
   return
 
 addHandler = (argv) ->
@@ -91,6 +92,7 @@ addHandler = (argv) ->
       noDuplicatedProducts.push(record)
       fs.writeFileSync(productFile, JSON.stringify(noDuplicatedProducts))
       console.log("product id %s, site %s update done.", record.id, record.site)
+    process.exit()
     return
 
   analyze = ->
@@ -160,8 +162,6 @@ addHandler = (argv) ->
   writeRecord(analyze())
   return
 
-#addHandler = (id, site) ->
-
 removeHandler = (argv) ->
   analyze = ->
     [id, site] = [false, false]
@@ -190,6 +190,7 @@ removeHandler = (argv) ->
     )
   )
   console.log("remove done.")
+  process.exit()
   return
 
 resetHandler = ->
@@ -207,8 +208,7 @@ resetHandler = ->
   )
   return
 
-parser = module.exports
-parser.parse = (argv, launch) ->
+module.exports.parse = (argv, launch) ->
   if argv.length == 0
     launch()
   else if argv[0] == "add" and 1 < argv.length
