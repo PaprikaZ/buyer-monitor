@@ -11,7 +11,7 @@ class Visitor
 
   visit: ->
     self = this
-    request(self.seed.url, (err, res, body) ->
+    request.get(self.seed.url, (err, res, body) ->
       if not err and res.statusCode == 200
         self.processPage(body)
       else if not err and res.statusCode != 200
@@ -47,7 +47,7 @@ class Visitor
     result = id: @seed.id, site: @seed.site, url: @seed.url
     for attr, val of parser.parse(html)
       result[attr] = val
-    console.log(result)
+    logger.info(result)
     return result
 
   pushQueue: (result) ->
