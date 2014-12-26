@@ -1,38 +1,47 @@
 util = require('util')
 request = require('request')
 config = require('./config.js')
+PARSE_FIELD = require('./page_parser.js').MANDATORY_FIELD
+PRODUCT_BASE_FIELD = require('./seed.js').MANDATORY_BASE_FIELD
+
 accessTokens = config.accounts.map((account) ->
   return account.accessToken)
 
-assembleMessengeTitle = (result) ->
-  title = util.format("id %s on site %s meet your requirement", result.id, result.site)
+assembleMessageTitle = (result) ->
+  if PRODUCT_BASE_FIELD.reduce(((partial, field) -> return partial and result[field]), true)
+    title = util.format('id %s on site %s meet your requirement', result.id, result.site)
+  else
+    logger.error('there is product base field missing')
+    resultErrorHandler()
   return title
 
-assembleMessengeBody = (result) ->
-  body =  util.format("Title: %s\n", result.title)
-  body += util.format("Url: %s\n", result.url)
-  body += util.format("Price: %s        full price: %s\n", result.price, result.fullPrice)
-  body += util.format("Discount: %s\% OFF\n", Math.round(result.discount))
-  body += util.format("Review: %s\n", result.review)
-  body += util.format("Instore: %s\n", result.instore? "yes" : "no")
-  if 0 < result.benefits.length
-    result.benefits.forEach((benefit, idx) ->
-      body += util.format("Benefit%s: %s\n", idx, benefit)
-      return
-    )
+assembleMessageBody = (result) ->
+  if PARSE_FIELD.reduce(((partial, field) -> return partial and result[field]), true)
+    body =  util.format('Title: %s\n', result.title)
+    body += util.format('Url: %s\n', result.url)
+    body += util.format('Price: %s        full price: %s\n', result.price, result.fullPrice)
+    body += util.format('Discount: %s\% OFF\n', Math.round(result.discount))
+    body += util.format('Review: %s\n', result.review)
+    body += util.format('Instore: %s\n', (result.instore? 'yes' : 'no'))
+    if 0 < result.benefits.length
+      result.benefits.forEach((benefit, idx) ->
+        body += util.format('Benefit%s: %s\n', idx, benefit)
+        return
+      )
+    else
+      body += 'Benefits: none\n'
   else
-    body += "Benefits: none\n"
+    logger.error('there is parse field missing')
+    resultErrorHandler()
   return body
 
-class Messenger
-  constructor: ->
-  push: (result) ->
-    self = @
-    logger.debug("id %s site %s to be pushed", result.id, result.site)
+push = (result) ->
+  logger.debug('id %s site %s ready to be pushed', result.id, result.site)
+  if 0 < accessTokens.length
     messenge =
       type: 'note'
-      title: assembleMessengeTitle(result)
-      body: assembleMessengeBody(result)
+      title: assembleMessageTitle(result)
+      body: assembleMessageBody(result)
 
     accessTokens.map((token) ->
       shortToken = token.slice(0, 7)
@@ -45,25 +54,36 @@ class Messenger
         body: JSON.stringify(messenge)
 
       request.post(postOptions, (err, res, body) ->
-        if not err and res.statusCode == 200
-          logger.info("push message to user %s ok.", shortToken)
-        else if not err and res.statusCode != 200
-          self.errorResponseHandler(shortToken, err, res, body)
+        if not err
+          if res.statusCode == 200
+            logger.info('push message to user %s ok.', shortToken)
+          else
+            responseErrorHandler(shortToken, res, body)
         else
-          self.failedRequestHandler(shortToken, err, res, body)
+          requestErrorHandler(shortToken, err)
         return
       )
     )
-    return
+  else
+    logger.error('no available tokens')
+    tokenEmptyHandler()
+  return
 
-  errorResponseHandler: (token, err, res, body) ->
-    logger.warn("messenger response error.")
-    logger.warn("token %s response status code: %s", token, res.statusCode)
-    logger.warn("token %s body: %s", token, body)
-    return
-  failedRequestHandler: (token, err, res, body) ->
-    logger.error("messenger request failed.")
-    logger.error("token %s, error %s", token, err)
-    return
+tokenEmptyHandler = ->
+  throw new Error('no available tokens')
 
-module.exports = Messenger
+resultErrorHandler = ->
+  throw new Error('result attributes error')
+
+responseErrorHandler = (token, res, body) ->
+  logger.error('http post response error.')
+  logger.error('token %s response status code: %s', token, res.statusCode)
+  logger.error('token %s body: %s', token, body)
+  throw new Error('push message response error')
+
+requestErrorHandler = (token, err) ->
+  logger.error('http post request error.')
+  logger.error('token %s, error %s', token, err.message)
+  throw err
+
+module.exports.push = push

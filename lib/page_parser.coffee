@@ -1,5 +1,8 @@
 cheerio = require('cheerio')
 
+_MANDATORY_PARSE_FIELD = ['title', 'price', 'fullPrice', 'review', 'instore', 'benefits']
+MANDATORY_FIELD = ['title', 'price', 'fullPrice', 'discount', 'review', 'instore', 'benefits']
+
 review =
   fiveStar: 10
   fourHalfStar: 9
@@ -17,8 +20,8 @@ review =
 class Parser
   constructor: ->
   load: cheerio.load
-  mandatoryParseFields: ['title', 'price', 'fullPrice', 'review', 'instore', 'benefits']
-  mandatoryFields: ['title', 'price', 'fullPrice', 'discount', 'review', 'instore', 'benefits']
+  mandatoryParseFields: _MANDATORY_PARSE_FIELD
+  mandatoryFields: MANDATORY_FIELD
   parse: (html) ->
     self = @
     $ = @load(html)
@@ -96,7 +99,8 @@ class AmazonUSParser extends Parser
 class AmazonJPParser extends Parser
 class JingdongParser extends Parser
 
-module.exports = (site) ->
+module.exports.MANDATORY_FIELD = MANDATORY_FIELD
+module.exports.newParser = (site) ->
   newParser =
     switch site
       when 'www.amazon.cn' then new AmazonCNParser()

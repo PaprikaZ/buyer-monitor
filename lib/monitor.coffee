@@ -4,7 +4,7 @@ async = require('async')
 request = require('request')
 config = require('./config.js')
 Visitor = require('./visitor.js')
-Seed = require('./seed.js')
+Seed = require('./seed.js').Seed
 DBClient = require('./db_client.js')
 productFile = '../product.json'
 

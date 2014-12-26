@@ -2,6 +2,9 @@ httpPrefix = 'http://'
 httpsPrefix = 'https://'
 htmlSuffix = '.html'
 
+MANDATORY_BASE_FIELD = ['id', 'site']
+MANDATORY_VERDICT_FIELD = ['price', 'discount', 'instore', 'review']
+
 siteTable =
   amazonCN: {
     site: "www.amazon.cn"
@@ -84,5 +87,7 @@ class Seed
     ret = ret and @verdictBenefits(result.benefits)
     return ret
 
-module.exports = Seed
+module.exports.Seed = Seed
+module.exports.MANDATORY_BASE_FIELD = MANDATORY_BASE_FIELD
+module.exports.MANDATORY_VERDICT_FIELD = MANDATORY_VERDICT_FIELD
 
