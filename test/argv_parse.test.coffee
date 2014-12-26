@@ -3,6 +3,7 @@ rewire = require('rewire')
 describe('argv parser', ->
   describe('parse', ->
     argvParser = rewire('../lib/argv_parser.js')
+    parse = argvParser.parse
     called = false
     makeCalledTrue = ->
       called = true
@@ -30,84 +31,78 @@ describe('argv parser', ->
     )
 
     it('should route to launch when no further arguments', ->
-      argvParser.parse([], makeCalledTrue)
+      parse([], makeCalledTrue)
       called.should.be.true
       return
     )
 
     it('should route to add handler when add followed arguments', ->
       argvParser.__set__('addHandler', makeCalledTrue)
-      argvParser.parse(['add', 'foo'], ->)
+      parse(['add', 'foo'], ->)
       called.should.be.true
       return
     )
 
     it('should route to unknown handler when only add given', ->
-      argvParser.parse.bind(null, ['add'], ->)
-        .should.throw(mockErrorMsg)
+      parse.bind(null, ['add'], ->).should.throw(mockErrorMsg)
       called.should.be.true
       return
     )
 
     it('should route to remove handler when remove followed arguments', ->
       argvParser.__set__('removeHandler', makeCalledTrue)
-      argvParser.parse(['remove', 'foo'], ->)
+      parse(['remove', 'foo'], ->)
       called.should.be.true
       return
     )
 
     it('should route to unknown handler when only remove given', ->
-      argvParser.parse.bind(null, ['remove'], ->)
-        .should.throw(mockErrorMsg)
+      parse.bind(null, ['remove'], ->).should.throw(mockErrorMsg)
       called.should.be.true
       return
     )
 
     it('should route to list handler when only list given', ->
       argvParser.__set__('listHandler', makeCalledTrue)
-      argvParser.parse(['list'], ->)
+      parse(['list'], ->)
       called.should.be.true
       return
     )
 
     it('should route to unknown handler when list followed arguments', ->
-      argvParser.parse.bind(null, ['list', 'foo'], ->)
-        .should.throw(mockErrorMsg)
+      parse.bind(null, ['list', 'foo'], ->).should.throw(mockErrorMsg)
       called.should.be.true
       return
     )
 
     it('should route to reset handler when only reset given', ->
       argvParser.__set__('resetHandler', makeCalledTrue)
-      argvParser.parse(['reset'], ->)
+      parse(['reset'], ->)
       called.should.be.true
       return
     )
 
     it('should route to unknown handler when reset followed arguments', ->
-      argvParser.parse.bind(null, ['reset', 'foo'], ->)
-        .should.throw(mockErrorMsg)
+      parse.bind(null, ['reset', 'foo'], ->).should.throw(mockErrorMsg)
       called.should.be.true
       return
     )
 
     it('should route to help handler when only help given', ->
       argvParser.__set__('helpHandler', makeCalledTrue)
-      argvParser.parse(['help'], ->)
+      parse(['help'], ->)
       called.should.be.true
       return
     )
 
     it('should route to unknown handler when help followed arguments', ->
-      argvParser.parse.bind(null, ['help', 'foo'], ->)
-        .should.throw(mockErrorMsg)
+      parse.bind(null, ['help', 'foo'], ->).should.throw(mockErrorMsg)
       called.should.be.true
       return
     )
 
     it('should route to unknown handler when unknown arguments given', ->
-      argvParser.parse.bind(null, ['foo'], ->)
-        .should.throw(mockErrorMsg)
+      parse.bind(null, ['foo'], ->).should.throw(mockErrorMsg)
       called.should.be.true
       return
     )
@@ -116,6 +111,7 @@ describe('argv parser', ->
 
   describe('help handler', ->
     argvParser = rewire('../lib/argv_parser.js')
+    helpHandler = argvParser.__get__('helpHandler')
     called = false
     makeCalledTrue = ->
       called = true
@@ -136,7 +132,7 @@ describe('argv parser', ->
         process:
           exit: makeCalledTrue
       })
-      argvParser.__get__('helpHandler')()
+      helpHandler()
       called.should.be.true
       revert()
       return
@@ -146,6 +142,7 @@ describe('argv parser', ->
 
   describe('unknown argv handler', ->
     argvParser = rewire('../lib/argv_parser.js')
+    unknownArgvHandler = argvParser.__get__('unknownArgvHandler')
     called = false
     makeCalledTrue = ->
       called = true
@@ -160,8 +157,7 @@ describe('argv parser', ->
     )
 
     it('should throw unknown arguments error', ->
-      argvParser.__get__('unknownArgvHandler')
-        .should.throw(/^Unknown arguments/)
+      unknownArgvHandler.should.throw(/^Unknown arguments/)
       return
     )
     return
@@ -169,6 +165,7 @@ describe('argv parser', ->
 
   describe('lack arg handler', ->
     argvParser = rewire('../lib/argv_parser.js')
+    lackArgHandler = argvParser.__get__('lackArgHandler')
     called = false
     makeCalledTrue = ->
       called = true
@@ -183,15 +180,15 @@ describe('argv parser', ->
     )
 
     it('should throw lack of arguments error', ->
-      argvParser.__get__('lackArgHandler')
-        .should.throw(/^Lack of arguments/)
-        return
+      lackArgHandler.should.throw(/^Lack of arguments/)
+      return
     )
     return
   )
 
   describe('list handler', ->
     argvParser = rewire('../lib/argv_parser.js')
+    listHandler = argvParser.__get__('listHandler')
     called = false
     makeCalledTrue = ->
       called = true
@@ -215,7 +212,7 @@ describe('argv parser', ->
         process:
           exit: makeCalledTrue
       })
-      argvParser.__get__('listHandler')()
+      listHandler()
       called.should.be.true
       revert()
       return
@@ -225,6 +222,7 @@ describe('argv parser', ->
 
   describe('add handler', ->
     argvParser = rewire('../lib/argv_parser.js')
+    addHandler = argvParser.__get__('addHandler')
     called = false
     makeCalledTrue = ->
       called = true
@@ -264,7 +262,7 @@ describe('argv parser', ->
         process:
           exit: makeCalledTrue
       })
-      argvParser.__get__('addHandler')(['id', 'test0001', 'site', 'www.example.com', 'price', 'under', '0'])
+      addHandler(['id', 'test0001', 'site', 'www.example.com', 'price', 'under', '0'])
       called.should.be.true
       return
     )
@@ -276,7 +274,7 @@ describe('argv parser', ->
           throwMockError()
           return
       })
-      argvParser.__get__('addHandler').bind(null, ['site', 'www.example.com', 'price', 'under', '0'])
+      addHandler.bind(null, ['site', 'www.example.com', 'price', 'under', '0'])
         .should.throw(mockErrorMsg)
       called.should.be.true
       revert()
@@ -290,7 +288,7 @@ describe('argv parser', ->
           throwMockError()
           return
       })
-      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'price', 'under', '0'])
+      addHandler.bind(null, ['id', 'test0000', 'price', 'under', '0'])
         .should.throw(mockErrorMsg)
       called.should.be.true
       revert()
@@ -304,7 +302,7 @@ describe('argv parser', ->
           throwMockError()
           return
       })
-      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'site', 'www.example.com'])
+      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com'])
         .should.throw(mockErrorMsg)
       called.should.be.true
       revert()
@@ -318,13 +316,12 @@ describe('argv parser', ->
           throwMockError()
           return
       })
-      argvParser.__get__('addHandler').bind(null, ['id'])
+      addHandler.bind(null, ['id']).should.throw(mockErrorMsg)
+      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price'])
         .should.throw(mockErrorMsg)
-      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price'])
+      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price', 'under'])
         .should.throw(mockErrorMsg)
-      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price', 'under'])
-        .should.throw(mockErrorMsg)
-      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'site', 'www.example.com', 'benefit'])
+      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'benefit'])
         .should.throw(mockErrorMsg)
       called.should.be.true
       revert()
@@ -338,7 +335,7 @@ describe('argv parser', ->
           throwMockError()
           return
       })
-      argvParser.__get__('addHandler').bind(null, 'id', 'test0000', 'site', 'www.example.com', 'foo')
+      addHandler.bind(null, 'id', 'test0000', 'site', 'www.example.com', 'foo')
         .should.throw(mockErrorMsg)
       called.should.be.true
       revert()
@@ -354,7 +351,7 @@ describe('argv parser', ->
             data.should.equal(JSON.stringify([defaultProduct]))
             return
       })
-      argvParser.__get__('addHandler')(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, defaultProduct.price.target])
+      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, defaultProduct.price.target])
       return
     )
 
@@ -367,7 +364,7 @@ describe('argv parser', ->
             data.should.equal(JSON.stringify([newProduct]))
             return
       })
-      argvParser.__get__('addHandler')(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target])
+      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target])
       return
     )
 
@@ -380,7 +377,7 @@ describe('argv parser', ->
             data.should.equal(JSON.stringify([newProduct]))
             return
       })
-      argvParser.__get__('addHandler')(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target])
+      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target])
       return
     )
     return
@@ -388,6 +385,7 @@ describe('argv parser', ->
 
   describe('remove handler', ->
     argvParser = rewire('../lib/argv_parser.js')
+    removeHandler = argvParser.__get__('removeHandler')
     called = false
     makeCalledTrue = ->
       called = true
@@ -418,7 +416,7 @@ describe('argv parser', ->
         process:
           exit: makeCalledTrue
       })
-      argvParser.__get__('removeHandler')(['id', defaultProduct.id])
+      removeHandler(['id', defaultProduct.id])
       called.should.be.true
       return
     )
@@ -428,7 +426,7 @@ describe('argv parser', ->
         process:
           exit: makeCalledTrue
       })
-      argvParser.__get__('removeHandler')(['id', defaultProduct.id, 'site', defaultProduct.site])
+      removeHandler(['id', defaultProduct.id, 'site', defaultProduct.site])
       called.should.be.true
       return
     )
@@ -440,10 +438,8 @@ describe('argv parser', ->
           throwMockError()
           return
       })
-      argvParser.__get__('removeHandler').bind(null, ['id'])
-        .should.throw(mockErrorMsg)
-      argvParser.__get__('removeHandler').bind(null, ['id', 'test0000', 'site'])
-        .should.throw(mockErrorMsg)
+      removeHandler.bind(null, ['id']).should.throw(mockErrorMsg)
+      removeHandler.bind(null, ['id', 'test0000', 'site']).should.throw(mockErrorMsg)
       called.should.be.true
       revert()
       return
@@ -456,8 +452,7 @@ describe('argv parser', ->
           throwMockError()
           return
       })
-      argvParser.__get__('removeHandler').bind(null, ['site', 'www.example.com'])
-        .should.throw(mockErrorMsg)
+      removeHandler.bind(null, ['site', 'www.example.com']).should.throw(mockErrorMsg)
       called.should.be.true
       revert()
       return
@@ -470,7 +465,7 @@ describe('argv parser', ->
           throwMockError()
           return
       })
-      argvParser.__get__('removeHandler').bind(null, ['id', 'test0000', 'foo', 'site', 'www.example.com'])
+      removeHandler.bind(null, ['id', 'test0000', 'foo', 'site', 'www.example.com'])
         .should.throw(mockErrorMsg)
       called.should.be.true
       revert()
@@ -486,7 +481,7 @@ describe('argv parser', ->
             data.should.equal(JSON.stringify([]))
             return
       })
-      argvParser.__get__('removeHandler')(['id', defaultProduct.id])
+      removeHandler(['id', defaultProduct.id])
       return
     )
     
@@ -499,7 +494,7 @@ describe('argv parser', ->
             data.should.equal(JSON.stringify([]))
             return
       })
-      argvParser.__get__('removeHandler')(['id', defaultProduct.id, 'site', defaultProduct.site])
+      removeHandler(['id', defaultProduct.id, 'site', defaultProduct.site])
       return
     )
 
@@ -510,9 +505,9 @@ describe('argv parser', ->
             return JSON.stringify([defaultProduct])
           writeFileSync: ->
       })
-      argvParser.__get__('removeHandler').bind(null, ['id', 'notexistid', 'site', 'www.example.com'])
+      removeHandler.bind(null, ['id', 'notexistid', 'site', 'www.example.com'])
         .should.throw(/not founded!$/)
-      argvParser.__get__('removeHandler').bind(null, ['id', defaultProduct.id, 'site', 'www.notexist.com'])
+      removeHandler.bind(null, ['id', defaultProduct.id, 'site', 'www.notexist.com'])
         .should.throw(/not founded!$/)
       return
     )
@@ -524,8 +519,7 @@ describe('argv parser', ->
             return JSON.stringify([defaultProduct])
           writeFileSync: ->
       })
-      argvParser.__get__('removeHandler').bind(null, ['id', 'notexistid'])
-        .should.throw(/not founded!$/)
+      removeHandler.bind(null, ['id', 'notexistid']).should.throw(/not founded!$/)
       return
     )
     return
@@ -533,6 +527,7 @@ describe('argv parser', ->
 
   describe('reset handler', ->
     argvParser = rewire('../lib/argv_parser.js')
+    resetHandler = argvParser.__get__('resetHandler')
     called = false
     makeCalledTrue = ->
       called = true
@@ -571,7 +566,7 @@ describe('argv parser', ->
             write: ->
           exit: makeCalledTrue
       })
-      argvParser.__get__('resetHandler')()
+      resetHandler()
       called.should.be.true
       return
     )
@@ -588,7 +583,7 @@ describe('argv parser', ->
             write: ->
           exit: makeCalledTrue
       })
-      argvParser.__get__('resetHandler')()
+      resetHandler()
       called.should.be.true
       return
     )
@@ -605,7 +600,7 @@ describe('argv parser', ->
             write: ->
           exit: makeCalledTrue
       })
-      argvParser.__get__('resetHandler').should.throw(/^Invalid response/)
+      resetHandler.should.throw(/^Invalid response/)
       called.should.be.false
       return
     )
@@ -626,7 +621,7 @@ describe('argv parser', ->
             write: ->
           exit: makeCalledTrue
       })
-      argvParser.__get__('resetHandler')()
+      resetHandler()
       called.should.be.true
       return
     )
@@ -648,7 +643,7 @@ describe('argv parser', ->
             write: ->
           exit: makeCalledTrue
       })
-      argvParser.__get__('resetHandler')()
+      resetHandler()
       writeFileCalled.should.be.false
       called.should.be.true
       return

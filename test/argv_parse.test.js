@@ -5,8 +5,9 @@ rewire = require('rewire');
 
 describe('argv parser', function() {
   describe('parse', function() {
-    var argvParser, called, makeCalledFalse, makeCalledTrue, mockErrorMsg, throwMockError;
+    var argvParser, called, makeCalledFalse, makeCalledTrue, mockErrorMsg, parse, throwMockError;
     argvParser = rewire('../lib/argv_parser.js');
+    parse = argvParser.parse;
     called = false;
     makeCalledTrue = function() {
       called = true;
@@ -33,62 +34,63 @@ describe('argv parser', function() {
       });
     });
     it('should route to launch when no further arguments', function() {
-      argvParser.parse([], makeCalledTrue);
+      parse([], makeCalledTrue);
       called.should.be["true"];
     });
     it('should route to add handler when add followed arguments', function() {
       argvParser.__set__('addHandler', makeCalledTrue);
-      argvParser.parse(['add', 'foo'], function() {});
+      parse(['add', 'foo'], function() {});
       called.should.be["true"];
     });
     it('should route to unknown handler when only add given', function() {
-      argvParser.parse.bind(null, ['add'], function() {}).should["throw"](mockErrorMsg);
+      parse.bind(null, ['add'], function() {}).should["throw"](mockErrorMsg);
       called.should.be["true"];
     });
     it('should route to remove handler when remove followed arguments', function() {
       argvParser.__set__('removeHandler', makeCalledTrue);
-      argvParser.parse(['remove', 'foo'], function() {});
+      parse(['remove', 'foo'], function() {});
       called.should.be["true"];
     });
     it('should route to unknown handler when only remove given', function() {
-      argvParser.parse.bind(null, ['remove'], function() {}).should["throw"](mockErrorMsg);
+      parse.bind(null, ['remove'], function() {}).should["throw"](mockErrorMsg);
       called.should.be["true"];
     });
     it('should route to list handler when only list given', function() {
       argvParser.__set__('listHandler', makeCalledTrue);
-      argvParser.parse(['list'], function() {});
+      parse(['list'], function() {});
       called.should.be["true"];
     });
     it('should route to unknown handler when list followed arguments', function() {
-      argvParser.parse.bind(null, ['list', 'foo'], function() {}).should["throw"](mockErrorMsg);
+      parse.bind(null, ['list', 'foo'], function() {}).should["throw"](mockErrorMsg);
       called.should.be["true"];
     });
     it('should route to reset handler when only reset given', function() {
       argvParser.__set__('resetHandler', makeCalledTrue);
-      argvParser.parse(['reset'], function() {});
+      parse(['reset'], function() {});
       called.should.be["true"];
     });
     it('should route to unknown handler when reset followed arguments', function() {
-      argvParser.parse.bind(null, ['reset', 'foo'], function() {}).should["throw"](mockErrorMsg);
+      parse.bind(null, ['reset', 'foo'], function() {}).should["throw"](mockErrorMsg);
       called.should.be["true"];
     });
     it('should route to help handler when only help given', function() {
       argvParser.__set__('helpHandler', makeCalledTrue);
-      argvParser.parse(['help'], function() {});
+      parse(['help'], function() {});
       called.should.be["true"];
     });
     it('should route to unknown handler when help followed arguments', function() {
-      argvParser.parse.bind(null, ['help', 'foo'], function() {}).should["throw"](mockErrorMsg);
+      parse.bind(null, ['help', 'foo'], function() {}).should["throw"](mockErrorMsg);
       called.should.be["true"];
     });
     it('should route to unknown handler when unknown arguments given', function() {
-      argvParser.parse.bind(null, ['foo'], function() {}).should["throw"](mockErrorMsg);
+      parse.bind(null, ['foo'], function() {}).should["throw"](mockErrorMsg);
       called.should.be["true"];
     });
   });
   describe('help handler', function() {
-    var argvParser, called, makeCalledTrue;
+    var argvParser, called, helpHandler, makeCalledTrue;
     argvParser = rewire('../lib/argv_parser.js');
+    helpHandler = argvParser.__get__('helpHandler');
     called = false;
     makeCalledTrue = function() {
       called = true;
@@ -111,14 +113,15 @@ describe('argv parser', function() {
           exit: makeCalledTrue
         }
       });
-      argvParser.__get__('helpHandler')();
+      helpHandler();
       called.should.be["true"];
       revert();
     });
   });
   describe('unknown argv handler', function() {
-    var argvParser, called, makeCalledTrue;
+    var argvParser, called, makeCalledTrue, unknownArgvHandler;
     argvParser = rewire('../lib/argv_parser.js');
+    unknownArgvHandler = argvParser.__get__('unknownArgvHandler');
     called = false;
     makeCalledTrue = function() {
       called = true;
@@ -132,12 +135,13 @@ describe('argv parser', function() {
       });
     });
     it('should throw unknown arguments error', function() {
-      argvParser.__get__('unknownArgvHandler').should["throw"](/^Unknown arguments/);
+      unknownArgvHandler.should["throw"](/^Unknown arguments/);
     });
   });
   describe('lack arg handler', function() {
-    var argvParser, called, makeCalledTrue;
+    var argvParser, called, lackArgHandler, makeCalledTrue;
     argvParser = rewire('../lib/argv_parser.js');
+    lackArgHandler = argvParser.__get__('lackArgHandler');
     called = false;
     makeCalledTrue = function() {
       called = true;
@@ -151,12 +155,13 @@ describe('argv parser', function() {
       });
     });
     it('should throw lack of arguments error', function() {
-      argvParser.__get__('lackArgHandler').should["throw"](/^Lack of arguments/);
+      lackArgHandler.should["throw"](/^Lack of arguments/);
     });
   });
   describe('list handler', function() {
-    var argvParser, called, makeCalledTrue;
+    var argvParser, called, listHandler, makeCalledTrue;
     argvParser = rewire('../lib/argv_parser.js');
+    listHandler = argvParser.__get__('listHandler');
     called = false;
     makeCalledTrue = function() {
       called = true;
@@ -184,14 +189,15 @@ describe('argv parser', function() {
           exit: makeCalledTrue
         }
       });
-      argvParser.__get__('listHandler')();
+      listHandler();
       called.should.be["true"];
       revert();
     });
   });
   describe('add handler', function() {
-    var argvParser, called, defaultProduct, makeCalledTrue, mockErrorMsg, newProduct, throwMockError;
+    var addHandler, argvParser, called, defaultProduct, makeCalledTrue, mockErrorMsg, newProduct, throwMockError;
     argvParser = rewire('../lib/argv_parser.js');
+    addHandler = argvParser.__get__('addHandler');
     called = false;
     makeCalledTrue = function() {
       called = true;
@@ -239,7 +245,7 @@ describe('argv parser', function() {
           exit: makeCalledTrue
         }
       });
-      argvParser.__get__('addHandler')(['id', 'test0001', 'site', 'www.example.com', 'price', 'under', '0']);
+      addHandler(['id', 'test0001', 'site', 'www.example.com', 'price', 'under', '0']);
       called.should.be["true"];
     });
     it('should route to lack argv handler when id not given', function() {
@@ -250,7 +256,7 @@ describe('argv parser', function() {
           throwMockError();
         }
       });
-      argvParser.__get__('addHandler').bind(null, ['site', 'www.example.com', 'price', 'under', '0']).should["throw"](mockErrorMsg);
+      addHandler.bind(null, ['site', 'www.example.com', 'price', 'under', '0']).should["throw"](mockErrorMsg);
       called.should.be["true"];
       revert();
     });
@@ -262,7 +268,7 @@ describe('argv parser', function() {
           throwMockError();
         }
       });
-      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'price', 'under', '0']).should["throw"](mockErrorMsg);
+      addHandler.bind(null, ['id', 'test0000', 'price', 'under', '0']).should["throw"](mockErrorMsg);
       called.should.be["true"];
       revert();
     });
@@ -274,7 +280,7 @@ describe('argv parser', function() {
           throwMockError();
         }
       });
-      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'site', 'www.example.com']).should["throw"](mockErrorMsg);
+      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com']).should["throw"](mockErrorMsg);
       called.should.be["true"];
       revert();
     });
@@ -286,10 +292,10 @@ describe('argv parser', function() {
           throwMockError();
         }
       });
-      argvParser.__get__('addHandler').bind(null, ['id']).should["throw"](mockErrorMsg);
-      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price']).should["throw"](mockErrorMsg);
-      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price', 'under']).should["throw"](mockErrorMsg);
-      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'site', 'www.example.com', 'benefit']).should["throw"](mockErrorMsg);
+      addHandler.bind(null, ['id']).should["throw"](mockErrorMsg);
+      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price']).should["throw"](mockErrorMsg);
+      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price', 'under']).should["throw"](mockErrorMsg);
+      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'benefit']).should["throw"](mockErrorMsg);
       called.should.be["true"];
       revert();
     });
@@ -301,7 +307,7 @@ describe('argv parser', function() {
           throwMockError();
         }
       });
-      argvParser.__get__('addHandler').bind(null, 'id', 'test0000', 'site', 'www.example.com', 'foo').should["throw"](mockErrorMsg);
+      addHandler.bind(null, 'id', 'test0000', 'site', 'www.example.com', 'foo').should["throw"](mockErrorMsg);
       called.should.be["true"];
       revert();
     });
@@ -316,7 +322,7 @@ describe('argv parser', function() {
           }
         }
       });
-      argvParser.__get__('addHandler')(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, defaultProduct.price.target]);
+      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, defaultProduct.price.target]);
     });
     it('should overwrite record when id, site matched', function() {
       argvParser.__set__({
@@ -329,7 +335,7 @@ describe('argv parser', function() {
           }
         }
       });
-      argvParser.__get__('addHandler')(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target]);
+      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target]);
     });
     it('should overwrite record when only id given and matched', function() {
       argvParser.__set__({
@@ -342,12 +348,13 @@ describe('argv parser', function() {
           }
         }
       });
-      argvParser.__get__('addHandler')(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target]);
+      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target]);
     });
   });
   describe('remove handler', function() {
-    var argvParser, called, defaultProduct, makeCalledTrue, mockErrorMsg, throwMockError;
+    var argvParser, called, defaultProduct, makeCalledTrue, mockErrorMsg, removeHandler, throwMockError;
     argvParser = rewire('../lib/argv_parser.js');
+    removeHandler = argvParser.__get__('removeHandler');
     called = false;
     makeCalledTrue = function() {
       called = true;
@@ -383,7 +390,7 @@ describe('argv parser', function() {
           exit: makeCalledTrue
         }
       });
-      argvParser.__get__('removeHandler')(['id', defaultProduct.id]);
+      removeHandler(['id', defaultProduct.id]);
       called.should.be["true"];
     });
     it('should end with process exit when both id, site given', function() {
@@ -392,7 +399,7 @@ describe('argv parser', function() {
           exit: makeCalledTrue
         }
       });
-      argvParser.__get__('removeHandler')(['id', defaultProduct.id, 'site', defaultProduct.site]);
+      removeHandler(['id', defaultProduct.id, 'site', defaultProduct.site]);
       called.should.be["true"];
     });
     it('should route to lack arg handler when id or site field not given', function() {
@@ -403,8 +410,8 @@ describe('argv parser', function() {
           throwMockError();
         }
       });
-      argvParser.__get__('removeHandler').bind(null, ['id']).should["throw"](mockErrorMsg);
-      argvParser.__get__('removeHandler').bind(null, ['id', 'test0000', 'site']).should["throw"](mockErrorMsg);
+      removeHandler.bind(null, ['id']).should["throw"](mockErrorMsg);
+      removeHandler.bind(null, ['id', 'test0000', 'site']).should["throw"](mockErrorMsg);
       called.should.be["true"];
       revert();
     });
@@ -416,7 +423,7 @@ describe('argv parser', function() {
           throwMockError();
         }
       });
-      argvParser.__get__('removeHandler').bind(null, ['site', 'www.example.com']).should["throw"](mockErrorMsg);
+      removeHandler.bind(null, ['site', 'www.example.com']).should["throw"](mockErrorMsg);
       called.should.be["true"];
       revert();
     });
@@ -428,7 +435,7 @@ describe('argv parser', function() {
           throwMockError();
         }
       });
-      argvParser.__get__('removeHandler').bind(null, ['id', 'test0000', 'foo', 'site', 'www.example.com']).should["throw"](mockErrorMsg);
+      removeHandler.bind(null, ['id', 'test0000', 'foo', 'site', 'www.example.com']).should["throw"](mockErrorMsg);
       called.should.be["true"];
       revert();
     });
@@ -443,7 +450,7 @@ describe('argv parser', function() {
           }
         }
       });
-      argvParser.__get__('removeHandler')(['id', defaultProduct.id]);
+      removeHandler(['id', defaultProduct.id]);
     });
     it('should remove record when both id and site given', function() {
       argvParser.__set__({
@@ -456,7 +463,7 @@ describe('argv parser', function() {
           }
         }
       });
-      argvParser.__get__('removeHandler')(['id', defaultProduct.id, 'site', defaultProduct.site]);
+      removeHandler(['id', defaultProduct.id, 'site', defaultProduct.site]);
     });
     it('should throw not found error when id or site not existed', function() {
       argvParser.__set__({
@@ -467,8 +474,8 @@ describe('argv parser', function() {
           writeFileSync: function() {}
         }
       });
-      argvParser.__get__('removeHandler').bind(null, ['id', 'notexistid', 'site', 'www.example.com']).should["throw"](/not founded!$/);
-      argvParser.__get__('removeHandler').bind(null, ['id', defaultProduct.id, 'site', 'www.notexist.com']).should["throw"](/not founded!$/);
+      removeHandler.bind(null, ['id', 'notexistid', 'site', 'www.example.com']).should["throw"](/not founded!$/);
+      removeHandler.bind(null, ['id', defaultProduct.id, 'site', 'www.notexist.com']).should["throw"](/not founded!$/);
     });
     it('should throw not found error when only given id not existed', function() {
       argvParser.__set__({
@@ -479,12 +486,13 @@ describe('argv parser', function() {
           writeFileSync: function() {}
         }
       });
-      argvParser.__get__('removeHandler').bind(null, ['id', 'notexistid']).should["throw"](/not founded!$/);
+      removeHandler.bind(null, ['id', 'notexistid']).should["throw"](/not founded!$/);
     });
   });
   describe('reset handler', function() {
-    var argvParser, called, makeCalledTrue;
+    var argvParser, called, makeCalledTrue, resetHandler;
     argvParser = rewire('../lib/argv_parser.js');
+    resetHandler = argvParser.__get__('resetHandler');
     called = false;
     makeCalledTrue = function() {
       called = true;
@@ -530,7 +538,7 @@ describe('argv parser', function() {
           exit: makeCalledTrue
         }
       });
-      argvParser.__get__('resetHandler')();
+      resetHandler();
       called.should.be["true"];
     });
     it('should end with process exit when user not approve reset', function() {
@@ -548,7 +556,7 @@ describe('argv parser', function() {
           exit: makeCalledTrue
         }
       });
-      argvParser.__get__('resetHandler')();
+      resetHandler();
       called.should.be["true"];
     });
     it('should throw invalid response error when user input invalid', function() {
@@ -566,7 +574,7 @@ describe('argv parser', function() {
           exit: makeCalledTrue
         }
       });
-      argvParser.__get__('resetHandler').should["throw"](/^Invalid response/);
+      resetHandler.should["throw"](/^Invalid response/);
       called.should.be["false"];
     });
     it('should clear all record when user approve it', function() {
@@ -589,7 +597,7 @@ describe('argv parser', function() {
           exit: makeCalledTrue
         }
       });
-      argvParser.__get__('resetHandler')();
+      resetHandler();
       called.should.be["true"];
     });
     it('should cancel reset operation when user not approve it', function() {
@@ -614,7 +622,7 @@ describe('argv parser', function() {
           exit: makeCalledTrue
         }
       });
-      argvParser.__get__('resetHandler')();
+      resetHandler();
       writeFileCalled.should.be["false"];
       called.should.be["true"];
     });
