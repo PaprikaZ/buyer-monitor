@@ -6,41 +6,36 @@ stream = require('stream');
 rewire = require('rewire');
 
 describe('Argv Parser', function() {
-  describe('parse entry', function() {
-    var argvParser, called, makeCalledTrue;
+  describe('parse', function() {
+    var argvParser, called, makeCalledFalse, makeCalledTrue, mockErrorMsg, throwMockError;
     argvParser = rewire('../lib/argv_parser.js');
     called = false;
     makeCalledTrue = function() {
       called = true;
     };
+    makeCalledFalse = function() {
+      called = false;
+    };
+    mockErrorMsg = 'mock error';
+    throwMockError = function() {
+      throw new Error(mockErrorMsg);
+    };
     beforeEach(function() {
       called = false;
-      argvParser.__set__('addHandler', function() {
-        called = false;
-      });
-      argvParser.__set__('removeHandler', function() {
-        return called = false;
-      });
-      argvParser.__set__('listHandler', function() {
-        return called = false;
-      });
-      argvParser.__set__('resetHandler', function() {
-        return called = false;
-      });
-      argvParser.__set__('helpHandler', function() {
-        return called = false;
-      });
-      argvParser.__set__('unknownArgvHandler', function() {
-        return called = false;
+      argvParser.__set__({
+        addHandler: makeCalledFalse,
+        removeHandler: makeCalledFalse,
+        listHandler: makeCalledFalse,
+        resetHandler: makeCalledFalse,
+        helpHandler: makeCalledFalse,
+        unknownArgvHandler: function() {
+          makeCalledTrue();
+          throwMockError();
+        }
       });
     });
-    it('should route to launch entry when no further arguments', function() {
+    it('should route to launch when no further arguments', function() {
       argvParser.parse([], makeCalledTrue);
-      called.should.be["true"];
-    });
-    it('should route to unknown handler when only add given', function() {
-      argvParser.__set__('unknownArgvHandler', makeCalledTrue);
-      argvParser.parse(['add'], function() {});
       called.should.be["true"];
     });
     it('should route to add handler when add followed arguments', function() {
@@ -48,14 +43,17 @@ describe('Argv Parser', function() {
       argvParser.parse(['add', 'foo'], function() {});
       called.should.be["true"];
     });
-    it('should route to unknown handler when only remove given', function() {
-      argvParser.__set__('unknownArgvHandler', makeCalledTrue);
-      argvParser.parse(['remove'], function() {});
+    it('should route to unknown handler when only add given', function() {
+      argvParser.parse.bind(null, ['add'], function() {}).should["throw"](mockErrorMsg);
       called.should.be["true"];
     });
     it('should route to remove handler when remove followed arguments', function() {
       argvParser.__set__('removeHandler', makeCalledTrue);
       argvParser.parse(['remove', 'foo'], function() {});
+      called.should.be["true"];
+    });
+    it('should route to unknown handler when only remove given', function() {
+      argvParser.parse.bind(null, ['remove'], function() {}).should["throw"](mockErrorMsg);
       called.should.be["true"];
     });
     it('should route to list handler when only list given', function() {
@@ -64,9 +62,8 @@ describe('Argv Parser', function() {
       called.should.be["true"];
     });
     it('should route to unknown handler when list followed arguments', function() {
-      argvParser.__set__('unknownArgvHandler', makeCalledTrue);
-      argvParser.parse(['list', 'foo'], function() {});
-      return called.should.be["true"];
+      argvParser.parse.bind(null, ['list', 'foo'], function() {}).should["throw"](mockErrorMsg);
+      called.should.be["true"];
     });
     it('should route to reset handler when only reset given', function() {
       argvParser.__set__('resetHandler', makeCalledTrue);
@@ -74,8 +71,7 @@ describe('Argv Parser', function() {
       called.should.be["true"];
     });
     it('should route to unknown handler when reset followed arguments', function() {
-      argvParser.__set__('unknownArgvHandler', makeCalledTrue);
-      argvParser.parse(['reset', 'foo'], function() {});
+      argvParser.parse.bind(null, ['reset', 'foo'], function() {}).should["throw"](mockErrorMsg);
       called.should.be["true"];
     });
     it('should route to help handler when only help given', function() {
@@ -84,17 +80,15 @@ describe('Argv Parser', function() {
       called.should.be["true"];
     });
     it('should route to unknown handler when help followed arguments', function() {
-      argvParser.__set__('unknownArgvHandler', makeCalledTrue);
-      argvParser.parse(['help', 'foo'], function() {});
+      argvParser.parse.bind(null, ['help', 'foo'], function() {}).should["throw"](mockErrorMsg);
       called.should.be["true"];
     });
     it('should route to unknown handler when unknown arguments given', function() {
-      argvParser.__set__('unknownArgvHandler', makeCalledTrue);
-      argvParser.parse(['foo'], function() {});
+      argvParser.parse.bind(null, ['foo'], function() {}).should["throw"](mockErrorMsg);
       called.should.be["true"];
     });
   });
-  describe('handler', function() {
+  describe('helpHandler', function() {
     var argvParser, called, makeCalledTrue;
     argvParser = rewire('../lib/argv_parser.js');
     called = false;
@@ -108,44 +102,131 @@ describe('Argv Parser', function() {
           log: function() {}
         },
         process: {
-          stdin: {
-            setEncoding: function() {},
-            once: function() {}
-          },
-          stdout: {
-            write: function() {}
-          },
-          exit: makeCalledTrue
-        },
-        fs: {
-          writeFileSync: function() {}
+          exit: function() {}
         }
       });
     });
-    it("'unknown' should call process exit", function() {
-      argvParser.__get__('unknownArgvHandler')();
-      called.should.be["true"];
-    });
-    it("'help' should call process exit", function() {
-      argvParser.__get__('helpHandler')();
-      called.should.be["true"];
-    });
-    it("'list' should call process exit", function() {
+    it('should call process exit', function() {
       var revert;
       revert = argvParser.__set__({
+        process: {
+          exit: makeCalledTrue
+        }
+      });
+      argvParser.__get__('helpHandler')();
+      called.should.be["true"];
+      revert();
+    });
+  });
+  describe('unknownArgvHandler', function() {
+    var argvParser, called, makeCalledTrue;
+    argvParser = rewire('../lib/argv_parser.js');
+    called = false;
+    makeCalledTrue = function() {
+      called = true;
+    };
+    beforeEach(function() {
+      called = false;
+      argvParser.__set__({
+        console: {
+          log: function() {}
+        }
+      });
+    });
+    it('should throw unknown arguments error', function() {
+      argvParser.__get__('unknownArgvHandler').should["throw"](/^Unknown arguments/);
+    });
+  });
+  describe('lackArgHandler', function() {
+    var argvParser, called, makeCalledTrue;
+    argvParser = rewire('../lib/argv_parser.js');
+    called = false;
+    makeCalledTrue = function() {
+      called = true;
+    };
+    beforeEach(function() {
+      called = false;
+      argvParser.__set__({
+        console: {
+          log: function() {}
+        }
+      });
+    });
+    it('should throw lack of arguments error', function() {
+      argvParser.__get__('lackArgHandler').should["throw"](/^Lack of arguments/);
+    });
+  });
+  describe('listHandler', function() {
+    var argvParser, called, makeCalledTrue;
+    argvParser = rewire('../lib/argv_parser.js');
+    called = false;
+    makeCalledTrue = function() {
+      called = true;
+    };
+    beforeEach(function() {
+      called = false;
+      argvParser.__set__({
+        console: {
+          log: function() {}
+        },
+        process: {
+          exit: function() {}
+        },
         fs: {
-          readFileSync: function(file) {
+          readFileSync: function() {
             return JSON.stringify([]);
           }
+        }
+      });
+    });
+    it('should call process exit', function() {
+      var revert;
+      revert = argvParser.__set__({
+        process: {
+          exit: makeCalledTrue
         }
       });
       argvParser.__get__('listHandler')();
       called.should.be["true"];
       revert();
     });
-    it("'add' should call process exit with id, site, require specified", function() {
-      var revert;
-      revert = argvParser.__set__({
+  });
+  describe('addHandler', function() {
+    var argvParser, called, defaultProduct, makeCalledTrue, mockErrorMsg, newProduct, throwMockError;
+    argvParser = rewire('../lib/argv_parser.js');
+    called = false;
+    makeCalledTrue = function() {
+      called = true;
+    };
+    mockErrorMsg = 'mock error';
+    throwMockError = function() {
+      throw new Error(mockErrorMsg);
+    };
+    defaultProduct = {
+      id: 'test0000',
+      site: 'www.example.com',
+      price: {
+        compare: 'under',
+        target: 100
+      }
+    };
+    newProduct = {
+      id: 'test0000',
+      site: 'www.example.com',
+      price: {
+        compare: 'under',
+        target: 110
+      }
+    };
+    beforeEach(function() {
+      called = false;
+      argvParser.__set__({
+        console: {
+          log: function() {}
+        },
+        process: {
+          exit: function() {}
+        },
         fs: {
           writeFileSync: function() {},
           readFileSync: function() {
@@ -153,46 +234,291 @@ describe('Argv Parser', function() {
           }
         }
       });
-      argvParser.__get__('addHandler')([
-        {
-          'id': 'test0001',
-          'site': 'www.example.com'
-        }, 'price', 'foo', 'bar'
-      ]);
+    });
+    it('should call process exit with id, site, and require', function() {
+      argvParser.__set__({
+        process: {
+          exit: makeCalledTrue
+        }
+      });
+      argvParser.__get__('addHandler')(['id', 'test0001', 'site', 'www.example.com', 'price', 'under', '0']);
+      called.should.be["true"];
+    });
+    it('should call lack argv handler without id argument', function() {
+      var revert;
+      revert = argvParser.__set__({
+        lackArgHandler: function() {
+          makeCalledTrue();
+          throwMockError();
+        }
+      });
+      argvParser.__get__('addHandler').bind(null, ['site', 'www.example.com', 'price', 'under', '0']).should["throw"](mockErrorMsg);
       called.should.be["true"];
       revert();
     });
-    it("'remove' should call process exit with id specified", function() {
+    it('should call lack argv handler without site argument', function() {
       var revert;
       revert = argvParser.__set__({
+        lackArgHandler: function() {
+          makeCalledTrue();
+          throwMockError();
+        }
+      });
+      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'price', 'under', '0']).should["throw"](mockErrorMsg);
+      called.should.be["true"];
+      revert();
+    });
+    it('should call lack argv handler without require arguments', function() {
+      var revert;
+      revert = argvParser.__set__({
+        lackArgHandler: function() {
+          makeCalledTrue();
+          throwMockError();
+        }
+      });
+      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'site', 'www.example.com']).should["throw"](mockErrorMsg);
+      called.should.be["true"];
+      revert();
+    });
+    it('should call lack argv handler when keyword field not given', function() {
+      var revert;
+      revert = argvParser.__set__({
+        lackArgHandler: function() {
+          makeCalledTrue();
+          throwMockError();
+        }
+      });
+      argvParser.__get__('addHandler').bind(null, ['id']).should["throw"](mockErrorMsg);
+      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price']).should["throw"](mockErrorMsg);
+      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price', 'under']).should["throw"](mockErrorMsg);
+      argvParser.__get__('addHandler').bind(null, ['id', 'test0000', 'site', 'www.example.com', 'benefit']).should["throw"](mockErrorMsg);
+      called.should.be["true"];
+      revert();
+    });
+    it('should call unknown argv handler with unknown arguments', function() {
+      var revert;
+      revert = argvParser.__set__({
+        unknownArgvHandler: function() {
+          makeCalledTrue();
+          throwMockError();
+        }
+      });
+      argvParser.__get__('addHandler').bind(null, 'id', 'test0000', 'site', 'www.example.com', 'foo').should["throw"](mockErrorMsg);
+      called.should.be["true"];
+      revert();
+    });
+    it('should write new record to product data file', function() {
+      argvParser.__set__({
         fs: {
-          writeFileSync: function() {},
           readFileSync: function() {
             return JSON.stringify([]);
+          },
+          writeFileSync: function(file, data) {
+            data.should.equal(JSON.stringify([defaultProduct]));
           }
         }
       });
-      argvParser.__get__('removeHandler')(['id', 'test0001']);
-      called.should.be["true"];
-      revert();
+      argvParser.__get__('addHandler')(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, defaultProduct.price.target]);
     });
-    it("'remove' should call process exit with both id and site specified", function() {
-      var revert;
-      revert = argvParser.__set__({
+    it('should overwrite record when id, site matched', function() {
+      argvParser.__set__({
         fs: {
-          writeFileSync: function() {},
           readFileSync: function() {
-            return JSON.stringify([]);
+            return JSON.stringify([defaultProduct]);
+          },
+          writeFileSync: function(file, data) {
+            data.should.equal(JSON.stringify([newProduct]));
           }
         }
       });
-      argvParser.__get__('removeHandler')(['id', 'test0001', 'site', 'www.example.com']);
+      argvParser.__get__('addHandler')(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target]);
+    });
+    it('should overwrite record when only id given and matched', function() {
+      argvParser.__set__({
+        fs: {
+          readFileSync: function() {
+            return JSON.stringify([defaultProduct]);
+          },
+          writeFileSync: function(file, data) {
+            data.should.equal(JSON.stringify([newProduct]));
+          }
+        }
+      });
+      argvParser.__get__('addHandler')(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target]);
+    });
+  });
+  describe('removeHandler', function() {
+    var argvParser, called, defaultProduct, makeCalledTrue, mockErrorMsg, throwMockError;
+    argvParser = rewire('../lib/argv_parser.js');
+    called = false;
+    makeCalledTrue = function() {
+      called = true;
+    };
+    mockErrorMsg = 'mock error';
+    throwMockError = function() {
+      throw new Error(mockErrorMsg);
+    };
+    defaultProduct = {
+      id: 'test0000',
+      site: 'www.example.com'
+    };
+    beforeEach(function() {
+      called = false;
+      argvParser.__set__({
+        console: {
+          log: function() {}
+        },
+        process: {
+          exit: function() {}
+        },
+        fs: {
+          writeFileSync: function() {},
+          readFileSync: function() {
+            return JSON.stringify([defaultProduct]);
+          }
+        }
+      });
+    });
+    it('should call process exit with only id specified', function() {
+      argvParser.__set__({
+        process: {
+          exit: makeCalledTrue
+        }
+      });
+      argvParser.__get__('removeHandler')(['id', defaultProduct.id]);
+      called.should.be["true"];
+    });
+    it('should call process exit with both id, site specified', function() {
+      argvParser.__set__({
+        process: {
+          exit: makeCalledTrue
+        }
+      });
+      argvParser.__get__('removeHandler')(['id', defaultProduct.id, 'site', defaultProduct.site]);
+      called.should.be["true"];
+    });
+    it('should call lack arg handler when id or site field not given', function() {
+      var revert;
+      revert = argvParser.__set__({
+        lackArgHandler: function() {
+          makeCalledTrue();
+          throwMockError();
+        }
+      });
+      argvParser.__get__('removeHandler').bind(null, ['id']).should["throw"](mockErrorMsg);
+      argvParser.__get__('removeHandler').bind(null, ['id', 'test0000', 'site']).should["throw"](mockErrorMsg);
       called.should.be["true"];
       revert();
     });
-    it("'reset' should call process exit", function() {
+    it('should call lack arg handler without id specified', function() {
       var revert;
       revert = argvParser.__set__({
+        lackArgHandler: function() {
+          makeCalledTrue();
+          throwMockError();
+        }
+      });
+      argvParser.__get__('removeHandler').bind(null, ['site', 'www.example.com']).should["throw"](mockErrorMsg);
+      called.should.be["true"];
+      revert();
+    });
+    it('should call unknown arg handler with unknown arguments', function() {
+      var revert;
+      revert = argvParser.__set__({
+        unknownArgvHandler: function() {
+          makeCalledTrue();
+          throwMockError();
+        }
+      });
+      argvParser.__get__('removeHandler').bind(null, ['id', 'test0000', 'foo', 'site', 'www.example.com']).should["throw"](mockErrorMsg);
+      called.should.be["true"];
+      revert();
+    });
+    it('should remove record with id specified when site not given', function() {
+      argvParser.__set__({
+        fs: {
+          readFileSync: function() {
+            return JSON.stringify([defaultProduct]);
+          },
+          writeFileSync: function(file, data) {
+            data.should.equal(JSON.stringify([]));
+          }
+        }
+      });
+      argvParser.__get__('removeHandler')(['id', defaultProduct.id]);
+    });
+    it('should remove record with both id and site specified', function() {
+      argvParser.__set__({
+        fs: {
+          readFileSync: function() {
+            return JSON.stringify([defaultProduct]);
+          },
+          writeFileSync: function(file, data) {
+            data.should.equal(JSON.stringify([]));
+          }
+        }
+      });
+      argvParser.__get__('removeHandler')(['id', defaultProduct.id, 'site', defaultProduct.site]);
+    });
+    it('should throw not found error when id or site not existed', function() {
+      argvParser.__set__({
+        fs: {
+          readFileSync: function() {
+            return JSON.stringify([defaultProduct]);
+          },
+          writeFileSync: function() {}
+        }
+      });
+      argvParser.__get__('removeHandler').bind(null, ['id', 'notexistid', 'site', 'www.example.com']).should["throw"](/not founded!$/);
+      argvParser.__get__('removeHandler').bind(null, ['id', defaultProduct.id, 'site', 'www.notexist.com']).should["throw"](/not founded!$/);
+    });
+    it('should throw not found error when specific id not existed', function() {
+      argvParser.__set__({
+        fs: {
+          readFileSync: function() {
+            return JSON.stringify([defaultProduct]);
+          },
+          writeFileSync: function() {}
+        }
+      });
+      argvParser.__get__('removeHandler').bind(null, ['id', 'notexistid']).should["throw"](/not founded!$/);
+    });
+  });
+  describe('resetHandler', function() {
+    var argvParser, called, makeCalledTrue;
+    argvParser = rewire('../lib/argv_parser.js');
+    called = false;
+    makeCalledTrue = function() {
+      called = true;
+    };
+    beforeEach(function() {
+      called = false;
+      argvParser.__set__({
+        console: {
+          log: function() {}
+        },
+        fs: {
+          writeFileSync: function() {}
+        },
+        process: {
+          stdin: {
+            setEncoding: function() {},
+            once: function(ev, callback) {
+              ev === 'data' && callback();
+            }
+          },
+          stdout: {
+            write: function() {}
+          },
+          exit: makeCalledTrue
+        }
+      });
+    });
+    it('should call process exit when user approve reset', function() {
+      argvParser.__set__({
+        fs: {
+          writeFileSync: function() {}
+        },
         process: {
           stdin: {
             setEncoding: function() {},
@@ -208,7 +534,91 @@ describe('Argv Parser', function() {
       });
       argvParser.__get__('resetHandler')();
       called.should.be["true"];
-      revert();
+    });
+    it('should call process exit when user not approve reset', function() {
+      argvParser.__set__({
+        process: {
+          stdin: {
+            setEncoding: function() {},
+            once: function(ev, callback) {
+              ev === 'data' && callback('no');
+            }
+          },
+          stdout: {
+            write: function() {}
+          },
+          exit: makeCalledTrue
+        }
+      });
+      argvParser.__get__('resetHandler')();
+      called.should.be["true"];
+    });
+    it('should throw invalid response error when user input invalid', function() {
+      argvParser.__set__({
+        process: {
+          stdin: {
+            setEncoding: function() {},
+            once: function(ev, callback) {
+              ev === 'data' && callback('Invalid');
+            }
+          },
+          stdout: {
+            write: function() {}
+          },
+          exit: makeCalledTrue
+        }
+      });
+      argvParser.__get__('resetHandler').should["throw"](/^Invalid response/);
+      called.should.be["false"];
+    });
+    it('should clear all record when user approve it', function() {
+      argvParser.__set__({
+        fs: {
+          writeFileSync: function(file, data) {
+            data.should.equal(JSON.stringify([]));
+          }
+        },
+        process: {
+          stdin: {
+            setEncoding: function() {},
+            once: function(ev, callback) {
+              ev === 'data' && callback('yes');
+            }
+          },
+          stdout: {
+            write: function() {}
+          },
+          exit: makeCalledTrue
+        }
+      });
+      argvParser.__get__('resetHandler')();
+      called.should.be["true"];
+    });
+    it('should cancel reset operation when user not approve it', function() {
+      var writeFileCalled;
+      writeFileCalled = false;
+      argvParser.__set__({
+        fs: {
+          writeFileSync: function() {
+            writeFileCalled = true;
+          }
+        },
+        process: {
+          stdin: {
+            setEncoding: function() {},
+            once: function(ev, callback) {
+              ev === 'data' && callback('no');
+            }
+          },
+          stdout: {
+            write: function() {}
+          },
+          exit: makeCalledTrue
+        }
+      });
+      argvParser.__get__('resetHandler')();
+      writeFileCalled.should.be["false"];
+      called.should.be["true"];
     });
   });
 });

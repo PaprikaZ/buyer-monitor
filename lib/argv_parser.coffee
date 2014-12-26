@@ -5,13 +5,14 @@ config = require('./config.js')
 productFile = path.join('./', config.productFileName)
 
 unknownArgvHandler = ->
-  console.log('Unknown arguments, please see help with "node app.js help"')
-  process.exit()
-  return
+  throw new Error('Unknown arguments, please see help with "node main.js help"')
+
+lackArgHandler = ->
+  throw new Error('Lack of arguments, please see help with "node main.js help"')
 
 helpHandler = ->
   console.log('Usage:')
-  console.log('  node app.js')
+  console.log('  node main.js')
   console.log('    list')
   console.log('    add id <product-id> site <www.example.com> price under <target>')
   console.log('    remove id <product-id>')
@@ -21,13 +22,13 @@ helpHandler = ->
   console.log('The most commonly used example:')
   console.log('')
   console.log('  List all existing products')
-  console.log('  > node app.js list')
+  console.log('  > node main.js list')
   console.log('  Also you can specify the id or site as to filter result')
-  console.log('  > node app.js list site www.amazon.cn')
-  console.log('  > node app.js list id B00JG8GOWU ')
+  console.log('  > node main.js list site www.amazon.cn')
+  console.log('  > node main.js list id B00JG8GOWU ')
   console.log('')
   console.log('  Add product id B00JG8GOWU on site www.amazon.com')
-  console.log('  > node app.js add id B00JG8GOWU site www.amazon.com <require>')
+  console.log('  > node main.js add id B00JG8GOWU site www.amazon.com <require>')
   console.log('    About the requirement, some operation is given')
   console.log('    Those price under 12 (according local) will be noticed')
   console.log('    > price under 12')
@@ -44,15 +45,15 @@ helpHandler = ->
   console.log('    > benefit /buy two with one off/')
   console.log('')
   console.log('  Remove product id B00JG8GOWU')
-  console.log('  > node app.js remove id B00JG8GOWU site www.amazon.com')
+  console.log('  > node main.js remove id B00JG8GOWU site www.amazon.com')
   console.log('  Since duplicated is merely happen, you ignore site option')
-  console.log('  > node app.js remove id B00JG8GOWU')
+  console.log('  > node main.js remove id B00JG8GOWU')
   console.log('')
   console.log('  Reset all added products')
-  console.log('  > node app.js reset')
+  console.log('  > node main.js reset')
   console.log('')
   console.log('  See this help page')
-  console.log('  > node app.js help')
+  console.log('  > node main.js help')
   console.log('')
   console.log('The monitor products located in product.json at root path.')
   process.exit()
@@ -60,77 +61,52 @@ helpHandler = ->
 
 listHandler = ->
   console.log('Products monitored:')
-  JSON.parse(fs.readFileSync(productFile)).forEach((elt, index, arr) ->
-    output = util.format('id %s site %s ', elt.id, elt.site)
-    if elt.price
-      output += util.format( 'price %s %s ', elt.price.compare, elt.price.target)
-    if elt.discount
-      output += util.format(
-        'discount %s %s\%off ', elt.discount.compare, elt.discount.target)
-    if elt.review
-      output += util.format(
-        'review %s %s ', elt.review.compare, elt.review.target)
-    if elt.benefit
-      output += util.format(
-        'benefit match \/%s\/%s',
-        elt.benefit.regex, elt.benefit.option)
-    console.log(output)
-    return
-  )
-  console.log('list done.')
+  products = JSON.parse(fs.readFileSync(productFile))
+  if 0 < products.length
+    products.forEach((elt, index, arr) ->
+      output = util.format('id %s site %s ', elt.id, elt.site)
+      if elt.price
+        output += util.format( 'price %s %s ', elt.price.compare, elt.price.target)
+      if elt.discount
+        output += util.format(
+          'discount %s %s\%off ', elt.discount.compare, elt.discount.target)
+      if elt.review
+        output += util.format(
+          'review %s %s ', elt.review.compare, elt.review.target)
+      if elt.benefit
+        output += util.format(
+          'benefit match \/%s\/%s',
+          elt.benefit.regex, elt.benefit.option)
+      console.log(output)
+      return
+    )
+  else
+    console.log('empty')
+  console.log('\nlist done.')
   process.exit()
   return
 
 addHandler = (argv) ->
-  writeRecord = (record) ->
-    products = JSON.parse(fs.readFileSync(productFile))
-    noDuplicatedProducts = products.filter((elt, index, arr) ->
-      return elt.id != record.id or elt.site != record.site
-    )
-    
-    if noDuplicatedProducts.length == products.length
-      products.push(record)
-      fs.writeFileSync(productFile, JSON.stringify(products))
-      console.log('add done.')
-    else
-      noDuplicatedProducts.push(record)
-      fs.writeFileSync(productFile, JSON.stringify(noDuplicatedProducts))
-      console.log('product id %s, site %s update done.', record.id, record.site)
-    process.exit()
-    return
-
   analyze = ->
     record = {}
-    priceIter = (remaining) ->
-      if remaining[0] == 'under'
-        record.price = {compare: 'under', target: parseInt(remaining[1])}
+    keywordIter = (remaining, compareKeyword, parse) ->
+      if 1 < remaining.length and remaining[0] == compareKeyword
+        record.price = {compare: remaining[0], target: parse(remaining[1])}
         return iter(remaining.slice(2))
-      else
-        unknownArgvHandler()
-      return
-
-    discountIter = (remaining) ->
-      if remaining[0] == 'above'
-        record.discount = {compare: 'above', target: parseInt(remaining[1])}
-        return iter(remaining.slice(2))
-      else
-        unknownArgvHandler()
-      return
-
-    reviewIter = (remaining) ->
-      if remaining[0] == 'above'
-        record.review = {compare: 'above', target: remaining[1]}
-        return iter(remaining.slice(2))
+      else if remaining.length < 2
+        lackArgHandler()
       else
         unknownArgvHandler()
       return
 
     benefitIter = (remaining) ->
       regex = /^\/(.*)\/(i?)$/
-      if regex.test(remaining[0])
+      if 0 < remaining.length and remaining.regex.test(remaining[0])
         matches = remaining[0].match(regex)
         record.benefit = {regex: matches[1], option: matches[2]}
         return iter(remaining.slice(1))
+      else if remaining.length < 1
+        lackArgHandler()
       else
         unknownArgvHandler()
       return
@@ -139,17 +115,23 @@ addHandler = (argv) ->
       if remaining.length == 0
         return record
       else if remaining[0] == 'id'
-        record.id = remaining[1]
-        iter(remaining.slice(2))
+        if 1 < remaining.length
+          record.id = remaining[1]
+          iter(remaining.slice(2))
+        else
+          lackArgHandler()
       else if remaining[0] == 'site'
-        record.site = remaining[1]
-        iter(remaining.slice(2))
+        if 1 < remaining.length
+          record.site = remaining[1]
+          iter(remaining.slice(2))
+        else
+          lackArgHandler()
       else if remaining[0] == 'price'
-        priceIter(remaining.slice(1))
+        keywordIter(remaining.slice(1), 'under', parseInt)
       else if remaining[0] == 'discount'
-        discountIter(remaining.slice(1))
+        keywordIter(remaining.slice(1), 'above', parseInt)
       else if remaining[0] == 'review'
-        reviewIter(remaining.slice(1))
+        keywordIter(remaining.slice(1), 'above', (x) -> x)
       else if remaining[0] == 'benefit'
         benefitIter(remaining.slice(1))
       else
@@ -157,13 +139,27 @@ addHandler = (argv) ->
       return
 
     iter(argv)
-    if record.price or record.discount or record.benefit
+    if record.id and record.site and (record.price or record.discount or record.benefit)
       return record
     else
-      unknownArgvHandler()
+      lackArgHandler()
+    return
+
+  writeRecord = (record) ->
+    products = JSON.parse(fs.readFileSync(productFile))
+    filteredProducts = products.filter((elt, index, arr) ->
+      return elt.id != record.id or elt.site != record.site
+    )
+    filteredProducts.push(record)
+    fs.writeFileSync(productFile, JSON.stringify(filteredProducts))
+    if filteredProducts.length == products.length
+      console.log('add done.')
+    else
+      console.log('id %s, site %s update done.', record.id, record.site)
     return
 
   writeRecord(analyze())
+  process.exit()
   return
 
 removeHandler = (argv) ->
@@ -172,29 +168,38 @@ removeHandler = (argv) ->
     iter = (remaining) ->
       if remaining.length == 0
         return [id, site]
-      else if remaining[0] == 'id'
+      else if 1 < remaining.length and remaining[0] == 'id'
         id = remaining[1]
-      else if remaining[0] == 'site'
+      else if 1 < remaining.length and remaining[0] == 'site'
         site = remaining[1]
+      else if remaining.length < 2
+        lackArgHandler()
       else
         unknownArgvHandler()
-        return
       return iter(remaining.slice(2))
     return iter(argv)
   [id, site] = analyze()
-  products = JSON.parse(fs.readFileSync(productFile))
-  fs.writeFileSync(
-    productFile,
-    JSON.stringify(products.filter((elt, index, arr) ->
+  if id != false
+    products = JSON.parse(fs.readFileSync(productFile))
+    filteredProducts = products.filter((elt, index, arr) ->
       if site
         return elt.id != id or elt.site != site
       else
         return elt.id != id
-      )
     )
-  )
-  console.log('remove done.')
-  process.exit()
+    if filteredProducts.length < products.length
+      fs.writeFileSync(productFile, JSON.stringify(filteredProducts))
+      console.log('remove done.')
+      process.exit()
+    else
+      if site
+        msg = util.format('id %s site %s not founded!', id, site)
+        throw new Error(msg)
+      else
+        msg = util.format('id %s not founded!', id)
+        throw new Error(msg)
+  else
+    lackArgHandler()
   return
 
 resetHandler = ->
@@ -207,7 +212,7 @@ resetHandler = ->
     else if input == 'n' or input == 'no'
       console.log('Reset aborted by user')
     else
-      console.log('Invalid response, quit')
+      throw new Error('Invalid response, quit')
     return process.exit()
   )
   return
@@ -227,5 +232,4 @@ module.exports.parse = (argv, launch) ->
     helpHandler()
   else
     unknownArgvHandler()
-    return
   return
