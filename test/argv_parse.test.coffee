@@ -1,7 +1,6 @@
-stream = require('stream')
 rewire = require('rewire')
 
-describe('Argv Parser', ->
+describe('argv parser', ->
   describe('parse', ->
     argvParser = rewire('../lib/argv_parser.js')
     called = false
@@ -115,7 +114,7 @@ describe('Argv Parser', ->
     return
   )
 
-  describe('helpHandler', ->
+  describe('help handler', ->
     argvParser = rewire('../lib/argv_parser.js')
     called = false
     makeCalledTrue = ->
@@ -132,7 +131,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call process exit', ->
+    it('should end with process exit', ->
       revert = argvParser.__set__({
         process:
           exit: makeCalledTrue
@@ -145,7 +144,7 @@ describe('Argv Parser', ->
     return
   )
 
-  describe('unknownArgvHandler', ->
+  describe('unknown argv handler', ->
     argvParser = rewire('../lib/argv_parser.js')
     called = false
     makeCalledTrue = ->
@@ -168,7 +167,7 @@ describe('Argv Parser', ->
     return
   )
 
-  describe('lackArgHandler', ->
+  describe('lack arg handler', ->
     argvParser = rewire('../lib/argv_parser.js')
     called = false
     makeCalledTrue = ->
@@ -191,7 +190,7 @@ describe('Argv Parser', ->
     return
   )
 
-  describe('listHandler', ->
+  describe('list handler', ->
     argvParser = rewire('../lib/argv_parser.js')
     called = false
     makeCalledTrue = ->
@@ -211,7 +210,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call process exit', ->
+    it('should end with process exit', ->
       revert = argvParser.__set__({
         process:
           exit: makeCalledTrue
@@ -224,7 +223,7 @@ describe('Argv Parser', ->
     return
   )
 
-  describe('addHandler', ->
+  describe('add handler', ->
     argvParser = rewire('../lib/argv_parser.js')
     called = false
     makeCalledTrue = ->
@@ -260,7 +259,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call process exit with id, site, and require', ->
+    it('should end with process exit when id, site, and verdict given', ->
       argvParser.__set__({
         process:
           exit: makeCalledTrue
@@ -270,7 +269,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call lack argv handler without id argument', ->
+    it('should route to lack argv handler when id not given', ->
       revert = argvParser.__set__({
         lackArgHandler: ->
           makeCalledTrue()
@@ -284,7 +283,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call lack argv handler without site argument', ->
+    it('should route to lack argv handler when site not given', ->
       revert = argvParser.__set__({
         lackArgHandler: ->
           makeCalledTrue()
@@ -298,7 +297,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call lack argv handler without require arguments', ->
+    it('should route to lack argv handler when verdict not given', ->
       revert = argvParser.__set__({
         lackArgHandler: ->
           makeCalledTrue()
@@ -312,7 +311,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call lack argv handler when keyword field not given', ->
+    it('should route to lack argv handler when keyword field not given', ->
       revert = argvParser.__set__({
         lackArgHandler: ->
           makeCalledTrue()
@@ -332,7 +331,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call unknown argv handler with unknown arguments', ->
+    it('should route to unknown argv handler when meet unknown argument', ->
       revert = argvParser.__set__({
         unknownArgvHandler: ->
           makeCalledTrue()
@@ -346,7 +345,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should write new record to product data file', ->
+    it('should write new record when no duplicated record founded', ->
       argvParser.__set__({
         fs:
           readFileSync: ->
@@ -387,7 +386,7 @@ describe('Argv Parser', ->
     return
   )
 
-  describe('removeHandler', ->
+  describe('remove handler', ->
     argvParser = rewire('../lib/argv_parser.js')
     called = false
     makeCalledTrue = ->
@@ -414,7 +413,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call process exit with only id specified', ->
+    it('should end with process exit when only id given', ->
       argvParser.__set__({
         process:
           exit: makeCalledTrue
@@ -424,7 +423,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call process exit with both id, site specified', ->
+    it('should end with process exit when both id, site given', ->
       argvParser.__set__({
         process:
           exit: makeCalledTrue
@@ -434,7 +433,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call lack arg handler when id or site field not given', ->
+    it('should route to lack arg handler when id or site field not given', ->
       revert = argvParser.__set__({
         lackArgHandler: ->
           makeCalledTrue()
@@ -450,7 +449,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call lack arg handler without id specified', ->
+    it('should route to lack arg handler when id not given', ->
       revert = argvParser.__set__({
         lackArgHandler: ->
           makeCalledTrue()
@@ -464,7 +463,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call unknown arg handler with unknown arguments', ->
+    it('should route to unknown arg handler when meet unknown argument', ->
       revert = argvParser.__set__({
         unknownArgvHandler: ->
           makeCalledTrue()
@@ -478,7 +477,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should remove record with id specified when site not given', ->
+    it('should remove record when only id given', ->
       argvParser.__set__({
         fs:
           readFileSync: ->
@@ -491,7 +490,7 @@ describe('Argv Parser', ->
       return
     )
     
-    it('should remove record with both id and site specified', ->
+    it('should remove record when both id and site given', ->
       argvParser.__set__({
         fs:
           readFileSync: ->
@@ -518,7 +517,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should throw not found error when specific id not existed', ->
+    it('should throw not found error when only given id not existed', ->
       argvParser.__set__({
         fs:
           readFileSync: ->
@@ -532,7 +531,7 @@ describe('Argv Parser', ->
     return
   )
 
-  describe('resetHandler', ->
+  describe('reset handler', ->
     argvParser = rewire('../lib/argv_parser.js')
     called = false
     makeCalledTrue = ->
@@ -558,7 +557,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call process exit when user approve reset', ->
+    it('should end with process exit when user approve reset', ->
       argvParser.__set__({
         fs:
           writeFileSync: ->
@@ -577,7 +576,7 @@ describe('Argv Parser', ->
       return
     )
 
-    it('should call process exit when user not approve reset', ->
+    it('should end with process exit when user not approve reset', ->
       argvParser.__set__({
         process:
           stdin:
