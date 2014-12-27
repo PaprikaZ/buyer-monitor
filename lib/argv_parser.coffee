@@ -1,6 +1,10 @@
 util = require('util')
 fs = require('fs')
 path = require('path')
+seed = require('./seed.js')
+AVAILABLE_COMPARES = seed.AVAILABLE_COMPARES
+MANDATORY_BASE_FIELDS = seed.MANDATORY_BASE_FIELDS
+MANDATORY_VERDICT_FIELDS = seed.MANDATORY_VERDICT_FIELDS
 config = require('./config.js')
 productFile = path.join('./', config.productFileName)
 
@@ -89,26 +93,17 @@ listHandler = ->
 addHandler = (argv) ->
   analyze = ->
     record = {}
-    keywordIter = (remaining, compareKeyword, parse) ->
-      if 1 < remaining.length and remaining[0] == compareKeyword
-        record.price = {compare: remaining[0], target: parse(remaining[1])}
-        return iter(remaining.slice(2))
-      else if remaining.length < 2
-        lackArgHandler()
+    keywordIter = (remaining, parse) ->
+      if 1 < remaining.length
+        if AVAILABLE_COMPARES.indexOf(remaining[0]) != -1
+          return {
+            compare: remaining[0]
+            target: parse(remaining[1])
+          }
+        else
+          unknownArgvHandler()
       else
-        unknownArgvHandler()
-      return
-
-    benefitIter = (remaining) ->
-      regex = /^\/(.*)\/(i?)$/
-      if 0 < remaining.length and remaining.regex.test(remaining[0])
-        matches = remaining[0].match(regex)
-        record.benefit = {regex: matches[1], option: matches[2]}
-        return iter(remaining.slice(1))
-      else if remaining.length < 1
         lackArgHandler()
-      else
-        unknownArgvHandler()
       return
 
     iter = (remaining) ->
@@ -127,19 +122,41 @@ addHandler = (argv) ->
         else
           lackArgHandler()
       else if remaining[0] == 'price'
-        keywordIter(remaining.slice(1), 'under', parseInt)
+        record.price = keywordIter(remaining.slice(1, 3), parseInt)
+        iter(remaining.slice(3))
       else if remaining[0] == 'discount'
-        keywordIter(remaining.slice(1), 'above', parseInt)
+        record.discount = keywordIter(remaining.slice(1, 3), parseInt)
+        iter(remaining.slice(3))
       else if remaining[0] == 'review'
-        keywordIter(remaining.slice(1), 'above', (x) -> x)
+        record.review = keywordIter(remaining.slice(1, 3), parseInt)
+        iter(remaining.slice(3))
+      else if remaining[0] == 'instore'
+        record.instore = keywordIter(['equal'].concat(remaining.slice(1, 2)), (x) ->
+          switch x
+            when 'yes' then return true
+            when 'y' then return true
+            when 'no' then return false
+            when 'n' then return false
+            else unknownArgvHandler()
+        )
+        iter(remaining.slice(2))
       else if remaining[0] == 'benefit'
-        benefitIter(remaining.slice(1))
+        record.benefit = keywordIter(['match'].concat(remaining.slice(1, 2)), (x) ->
+          regex = /^\/(.*)\/(i?)$/
+          matches = x.match(regex)
+          return {regex: matches[1], option: matches[2]}
+        )
+        iter(remaining.slice(2))
       else
         unknownArgvHandler()
       return
 
     iter(argv)
-    if record.id and record.site and (record.price or record.discount or record.benefit)
+    if MANDATORY_BASE_FIELDS.reduce(((partial, field) ->
+      return partial and record[field]
+    ), true) and MANDATORY_VERDICT_FIELDS.reduce(((partial, field) ->
+      return partial or record[field]
+    ), false)
       return record
     else
       lackArgHandler()

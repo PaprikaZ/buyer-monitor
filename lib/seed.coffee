@@ -2,29 +2,35 @@ httpPrefix = 'http://'
 httpsPrefix = 'https://'
 htmlSuffix = '.html'
 
-MANDATORY_BASE_FIELD = ['id', 'site']
-MANDATORY_VERDICT_FIELD = ['price', 'discount', 'instore', 'review']
+MANDATORY_BASE_FIELDS = ['id', 'site']
+MANDATORY_VERDICT_FIELDS = ['price', 'discount', 'instore', 'review', 'benefit']
+AVAILABLE_COMPARES = ['above', 'under', 'equal', 'match']
+_MANDATORY_VERDICT_FIELDS_TYPE = ['number', 'number', 'boolean', 'string', 'string']
+_MANDATORY_VERDICT_METHODS = MANDATORY_VERDICT_FIELDS.forEach((field) ->
+  return 'verdict' + field.slice(0, 1).toUpperCase() + field.substring(1)
+)
+REVIEW_STAR = ['zero', 'half', 'one', 'one-half', 'two', 'two-half', 'three', 'three-half', 'four', 'four-half', 'five']
 
 siteTable =
   amazonCN: {
-    site: "www.amazon.cn"
+    site: 'www.amazon.cn'
     generateProductUrl: (productId) ->
-      return httpPrefix + @site + "/dp/" + productId
+      return httpPrefix + @site + '/dp/' + productId
   }
   amazonUS: {
-    site: "www.amazon.com"
+    site: 'www.amazon.com'
     generateProductUrl: (productId) ->
-      return httpPrefix + @site + "/dp/" + productId
+      return httpPrefix + @site + '/dp/' + productId
   }
   amazonJP: {
-    site: "www.amazon.co.jp"
+    site: 'www.amazon.co.jp'
     generateProductUrl: (productId) ->
-      return httpPrefix + @site + "/dp/" + productId
+      return httpPrefix + @site + '/dp/' + productId
   }
   jingdong: {
-    site: "www.jd.com"
+    site: 'www.jd.com'
     generateProductUrl: (productId) ->
-      return httpPrefix + @site.replace("www", "item") + "/" + \
+      return httpPrefix + @site.replace('www', 'item') + '/' + \
              productId + htmlSuffix
   }
 
@@ -88,6 +94,6 @@ class Seed
     return ret
 
 module.exports.Seed = Seed
-module.exports.MANDATORY_BASE_FIELD = MANDATORY_BASE_FIELD
-module.exports.MANDATORY_VERDICT_FIELD = MANDATORY_VERDICT_FIELD
-
+module.exports.MANDATORY_BASE_FIELDS = MANDATORY_BASE_FIELDS
+module.exports.MANDATORY_VERDICT_FIELDS = MANDATORY_VERDICT_FIELDS
+module.exports.AVAILABLE_COMPARES = AVAILABLE_COMPARES
