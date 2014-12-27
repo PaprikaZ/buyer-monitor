@@ -195,7 +195,7 @@ describe('argv parser', function() {
     });
   });
   describe('add handler', function() {
-    var addHandler, argvParser, called, defaultProduct, makeCalledTrue, mockErrorMsg, newProduct, throwMockError;
+    var addHandler, argvParser, called, defaultProduct, fullVerdictProduct, makeCalledTrue, mockErrorMsg, newProduct, throwMockError;
     argvParser = rewire('../lib/argv_parser.js');
     addHandler = argvParser.__get__('addHandler');
     called = false;
@@ -205,6 +205,33 @@ describe('argv parser', function() {
     mockErrorMsg = 'mock error';
     throwMockError = function() {
       throw new Error(mockErrorMsg);
+    };
+    fullVerdictProduct = {
+      id: 'test0000',
+      site: 'www.example.com',
+      price: {
+        compare: 'under',
+        target: 100
+      },
+      discount: {
+        compare: 'above',
+        target: 20
+      },
+      review: {
+        compare: 'above',
+        target: 8
+      },
+      instore: {
+        compare: 'equal',
+        target: true
+      },
+      benefit: {
+        compare: 'match',
+        target: {
+          regex: '20% off',
+          option: 'i'
+        }
+      }
     };
     defaultProduct = {
       id: 'test0000',
@@ -248,7 +275,7 @@ describe('argv parser', function() {
       addHandler(['id', 'test0001', 'site', 'www.example.com', 'price', 'under', '0']);
       called.should.be["true"];
     });
-    it('should route to lack argv handler when id not given', function() {
+    it('should route to lack arg handler when id not given', function() {
       var revert;
       revert = argvParser.__set__({
         lackArgHandler: function() {
@@ -260,7 +287,7 @@ describe('argv parser', function() {
       called.should.be["true"];
       revert();
     });
-    it('should route to lack argv handler when site not given', function() {
+    it('should route to lack arg handler when site not given', function() {
       var revert;
       revert = argvParser.__set__({
         lackArgHandler: function() {
@@ -272,7 +299,7 @@ describe('argv parser', function() {
       called.should.be["true"];
       revert();
     });
-    it('should route to lack argv handler when verdict not given', function() {
+    it('should route to lack arg handler when verdict not given', function() {
       var revert;
       revert = argvParser.__set__({
         lackArgHandler: function() {
@@ -284,7 +311,7 @@ describe('argv parser', function() {
       called.should.be["true"];
       revert();
     });
-    it('should route to lack argv handler when keyword field not given', function() {
+    it('should route to lack arg handler when keyword field not given', function() {
       var revert;
       revert = argvParser.__set__({
         lackArgHandler: function() {
@@ -318,11 +345,30 @@ describe('argv parser', function() {
             return JSON.stringify([]);
           },
           writeFileSync: function(file, data) {
-            data.should.equal(JSON.stringify([defaultProduct]));
+            data.should.equal(JSON.stringify([fullVerdictProduct]));
           }
         }
       });
-      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, defaultProduct.price.target]);
+      addHandler(['id', fullVerdictProduct.id, 'site', fullVerdictProduct.site, 'price', fullVerdictProduct.price.compare, fullVerdictProduct.price.target.toString(), 'discount', fullVerdictProduct.discount.compare, fullVerdictProduct.discount.target.toString(), 'review', fullVerdictProduct.review.compare, fullVerdictProduct.review.target.toString(), 'instore', 'yes', 'benefit', '/20% off/i']);
+    });
+    it('should write new record which have unified verdict data', function() {
+      argvParser.__set__({
+        fs: {
+          readFileSync: function() {
+            return JSON.stringify([]);
+          },
+          writeFileSync: function(file, data) {
+            argvParser.__get__('MANDATORY_VERDICT_FIELDS').map(function(field) {
+              var product;
+              product = JSON.parse(data).pop();
+              product.should.have.property(field);
+              product[field].should.have.property('compare');
+              product[field].should.have.property('target');
+            });
+          }
+        }
+      });
+      addHandler(['id', fullVerdictProduct.id, 'site', fullVerdictProduct.site, 'price', fullVerdictProduct.price.compare, fullVerdictProduct.price.target.toString(), 'discount', fullVerdictProduct.discount.compare, fullVerdictProduct.discount.target.toString(), 'review', fullVerdictProduct.review.compare, fullVerdictProduct.review.target.toString(), 'instore', 'yes', 'benefit', '/20% off/i']);
     });
     it('should overwrite record when id, site matched', function() {
       argvParser.__set__({
@@ -335,7 +381,7 @@ describe('argv parser', function() {
           }
         }
       });
-      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target]);
+      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target.toString()]);
     });
     it('should overwrite record when only id given and matched', function() {
       argvParser.__set__({
@@ -348,7 +394,7 @@ describe('argv parser', function() {
           }
         }
       });
-      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target]);
+      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target.toString()]);
     });
   });
   describe('remove handler', function() {

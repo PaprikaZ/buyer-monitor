@@ -230,6 +230,26 @@ describe('argv parser', ->
     mockErrorMsg = 'mock error'
     throwMockError = ->
       throw new Error(mockErrorMsg)
+    fullVerdictProduct =
+      id: 'test0000'
+      site: 'www.example.com'
+      price:
+        compare: 'under'
+        target: 100
+      discount:
+        compare: 'above'
+        target: 20
+      review:
+        compare: 'above'
+        target: 8
+      instore:
+        compare: 'equal'
+        target: true
+      benefit:
+        compare: 'match'
+        target:
+          regex: '20% off'
+          option: 'i'
     defaultProduct =
       id: 'test0000'
       site: 'www.example.com'
@@ -267,7 +287,7 @@ describe('argv parser', ->
       return
     )
 
-    it('should route to lack argv handler when id not given', ->
+    it('should route to lack arg handler when id not given', ->
       revert = argvParser.__set__({
         lackArgHandler: ->
           makeCalledTrue()
@@ -281,7 +301,7 @@ describe('argv parser', ->
       return
     )
 
-    it('should route to lack argv handler when site not given', ->
+    it('should route to lack arg handler when site not given', ->
       revert = argvParser.__set__({
         lackArgHandler: ->
           makeCalledTrue()
@@ -295,7 +315,7 @@ describe('argv parser', ->
       return
     )
 
-    it('should route to lack argv handler when verdict not given', ->
+    it('should route to lack arg handler when verdict not given', ->
       revert = argvParser.__set__({
         lackArgHandler: ->
           makeCalledTrue()
@@ -309,7 +329,7 @@ describe('argv parser', ->
       return
     )
 
-    it('should route to lack argv handler when keyword field not given', ->
+    it('should route to lack arg handler when keyword field not given', ->
       revert = argvParser.__set__({
         lackArgHandler: ->
           makeCalledTrue()
@@ -348,10 +368,45 @@ describe('argv parser', ->
           readFileSync: ->
             return JSON.stringify([])
           writeFileSync: (file, data) ->
-            data.should.equal(JSON.stringify([defaultProduct]))
+            data.should.equal(JSON.stringify([fullVerdictProduct]))
             return
       })
-      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, defaultProduct.price.target])
+      addHandler([
+        'id', fullVerdictProduct.id,
+        'site', fullVerdictProduct.site,
+        'price', fullVerdictProduct.price.compare, fullVerdictProduct.price.target.toString(),
+        'discount', fullVerdictProduct.discount.compare, fullVerdictProduct.discount.target.toString(),
+        'review', fullVerdictProduct.review.compare, fullVerdictProduct.review.target.toString(),
+        'instore', 'yes',
+        'benefit', '/20% off/i'
+      ])
+      return
+    )
+
+    it('should write new record which have unified verdict data', ->
+      argvParser.__set__({
+        fs:
+          readFileSync: ->
+            return JSON.stringify([])
+          writeFileSync: (file, data) ->
+            argvParser.__get__('MANDATORY_VERDICT_FIELDS').map((field) ->
+              product = JSON.parse(data).pop()
+              product.should.have.property(field)
+              product[field].should.have.property('compare')
+              product[field].should.have.property('target')
+              return
+            )
+            return
+      })
+      addHandler([
+        'id', fullVerdictProduct.id,
+        'site', fullVerdictProduct.site,
+        'price', fullVerdictProduct.price.compare, fullVerdictProduct.price.target.toString(),
+        'discount', fullVerdictProduct.discount.compare, fullVerdictProduct.discount.target.toString(),
+        'review', fullVerdictProduct.review.compare, fullVerdictProduct.review.target.toString(),
+        'instore', 'yes',
+        'benefit', '/20% off/i'
+      ])
       return
     )
 
@@ -364,7 +419,11 @@ describe('argv parser', ->
             data.should.equal(JSON.stringify([newProduct]))
             return
       })
-      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target])
+      addHandler([
+        'id', defaultProduct.id,
+        'site', defaultProduct.site,
+        'price', defaultProduct.price.compare, newProduct.price.target.toString()
+      ])
       return
     )
 
@@ -377,7 +436,11 @@ describe('argv parser', ->
             data.should.equal(JSON.stringify([newProduct]))
             return
       })
-      addHandler(['id', defaultProduct.id, 'site', defaultProduct.site, 'price', defaultProduct.price.compare, newProduct.price.target])
+      addHandler([
+        'id', defaultProduct.id,
+        'site', defaultProduct.site,
+        'price', defaultProduct.price.compare, newProduct.price.target.toString()
+      ])
       return
     )
     return
