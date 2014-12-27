@@ -1,1 +1,3 @@
-* Refactor monitor.js with new Launcher class
+* A spider to generate product map table among those online shopping sites
+* A formatted error message
+* fault, error, failure hierarchy on critical path, and domains
