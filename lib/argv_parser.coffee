@@ -45,8 +45,8 @@ helpHandler = ->
   console.log('    > review above four star')
   console.log('    > review above four-half star')
   console.log('')
-  console.log('    Also benefit available, support regex')
-  console.log('    > benefit /buy two with one off/')
+  console.log('    Also benefits match available, support regex')
+  console.log('    > benefits /buy two with one off/')
   console.log('')
   console.log('  Remove product id B00JG8GOWU')
   console.log('  > node main.js remove id B00JG8GOWU site www.amazon.com')
@@ -77,10 +77,10 @@ listHandler = ->
       if elt.review
         output += util.format(
           'review %s %s ', elt.review.compare, elt.review.target)
-      if elt.benefit
+      if elt.benefits
         output += util.format(
-          'benefit match \/%s\/%s',
-          elt.benefit.regex, elt.benefit.option)
+          'benefits match \/%s\/%s',
+          elt.benefits.regex, elt.benefits.option)
       console.log(output)
       return
     )
@@ -140,8 +140,8 @@ addHandler = (argv) ->
             else unknownArgvHandler()
         )
         iter(remaining.slice(2))
-      else if remaining[0] == 'benefit'
-        record.benefit = keywordIter(['match'].concat(remaining.slice(1, 2)), (x) ->
+      else if remaining[0] == 'benefits'
+        record.benefits = keywordIter(['match'].concat(remaining.slice(1, 2)), (x) ->
           regex = /^\/(.*)\/(i?)$/
           matches = x.match(regex)
           return {regex: matches[1], option: matches[2]}

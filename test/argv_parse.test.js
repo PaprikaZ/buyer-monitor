@@ -225,7 +225,7 @@ describe('argv parser', function() {
         compare: 'equal',
         target: true
       },
-      benefit: {
+      benefits: {
         compare: 'match',
         target: {
           regex: '20% off',
@@ -322,7 +322,7 @@ describe('argv parser', function() {
       addHandler.bind(null, ['id']).should["throw"](mockErrorMsg);
       addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price']).should["throw"](mockErrorMsg);
       addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price', 'under']).should["throw"](mockErrorMsg);
-      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'benefit']).should["throw"](mockErrorMsg);
+      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'benefits']).should["throw"](mockErrorMsg);
       called.should.be["true"];
       revert();
     });
@@ -349,7 +349,7 @@ describe('argv parser', function() {
           }
         }
       });
-      addHandler(['id', fullVerdictProduct.id, 'site', fullVerdictProduct.site, 'price', fullVerdictProduct.price.compare, fullVerdictProduct.price.target.toString(), 'discount', fullVerdictProduct.discount.compare, fullVerdictProduct.discount.target.toString(), 'review', fullVerdictProduct.review.compare, fullVerdictProduct.review.target.toString(), 'instore', 'yes', 'benefit', '/20% off/i']);
+      addHandler(['id', fullVerdictProduct.id, 'site', fullVerdictProduct.site, 'price', fullVerdictProduct.price.compare, fullVerdictProduct.price.target.toString(), 'discount', fullVerdictProduct.discount.compare, fullVerdictProduct.discount.target.toString(), 'review', fullVerdictProduct.review.compare, fullVerdictProduct.review.target.toString(), 'instore', 'yes', 'benefits', '/20% off/i']);
     });
     it('should write new record which have unified verdict data', function() {
       argvParser.__set__({
@@ -368,7 +368,7 @@ describe('argv parser', function() {
           }
         }
       });
-      addHandler(['id', fullVerdictProduct.id, 'site', fullVerdictProduct.site, 'price', fullVerdictProduct.price.compare, fullVerdictProduct.price.target.toString(), 'discount', fullVerdictProduct.discount.compare, fullVerdictProduct.discount.target.toString(), 'review', fullVerdictProduct.review.compare, fullVerdictProduct.review.target.toString(), 'instore', 'yes', 'benefit', '/20% off/i']);
+      addHandler(['id', fullVerdictProduct.id, 'site', fullVerdictProduct.site, 'price', fullVerdictProduct.price.compare, fullVerdictProduct.price.target.toString(), 'discount', fullVerdictProduct.discount.compare, fullVerdictProduct.discount.target.toString(), 'review', fullVerdictProduct.review.compare, fullVerdictProduct.review.target.toString(), 'instore', 'yes', 'benefits', '/20% off/i']);
     });
     it('should overwrite record when id, site matched', function() {
       argvParser.__set__({

@@ -245,7 +245,7 @@ describe('argv parser', ->
       instore:
         compare: 'equal'
         target: true
-      benefit:
+      benefits:
         compare: 'match'
         target:
           regex: '20% off'
@@ -341,7 +341,7 @@ describe('argv parser', ->
         .should.throw(mockErrorMsg)
       addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price', 'under'])
         .should.throw(mockErrorMsg)
-      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'benefit'])
+      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'benefits'])
         .should.throw(mockErrorMsg)
       called.should.be.true
       revert()
@@ -378,7 +378,7 @@ describe('argv parser', ->
         'discount', fullVerdictProduct.discount.compare, fullVerdictProduct.discount.target.toString(),
         'review', fullVerdictProduct.review.compare, fullVerdictProduct.review.target.toString(),
         'instore', 'yes',
-        'benefit', '/20% off/i'
+        'benefits', '/20% off/i'
       ])
       return
     )
@@ -405,7 +405,7 @@ describe('argv parser', ->
         'discount', fullVerdictProduct.discount.compare, fullVerdictProduct.discount.target.toString(),
         'review', fullVerdictProduct.review.compare, fullVerdictProduct.review.target.toString(),
         'instore', 'yes',
-        'benefit', '/20% off/i'
+        'benefits', '/20% off/i'
       ])
       return
     )
