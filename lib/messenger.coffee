@@ -1,14 +1,14 @@
 util = require('util')
 request = require('request')
 config = require('./config.js')
-PARSE_FIELD = require('./page_parser.js').MANDATORY_FIELD
-PRODUCT_BASE_FIELD = require('./seed.js').MANDATORY_BASE_FIELD
+PARSE_FIELDS = require('./page_parser.js').MANDATORY_FIELDS
+PRODUCT_BASE_FIELDS = require('./seed.js').MANDATORY_BASE_FIELDS
 
 accessTokens = config.accounts.map((account) ->
   return account.accessToken)
 
 assembleMessageTitle = (result) ->
-  if PRODUCT_BASE_FIELD.reduce(((partial, field) -> return partial and result[field]), true)
+  if PRODUCT_BASE_FIELDS.reduce(((partial, field) -> return partial and result[field]), true)
     title = util.format('id %s on site %s meet your requirement', result.id, result.site)
   else
     logger.error('there is product base field missing')
@@ -16,7 +16,7 @@ assembleMessageTitle = (result) ->
   return title
 
 assembleMessageBody = (result) ->
-  if PARSE_FIELD.reduce(((partial, field) -> return partial and result[field]), true)
+  if PARSE_FIELDS.reduce(((partial, field) -> return partial and result[field]), true)
     body =  util.format('Title: %s\n', result.title)
     body += util.format('Url: %s\n', result.url)
     body += util.format('Price: %s        full price: %s\n', result.price, result.fullPrice)

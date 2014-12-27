@@ -15,11 +15,21 @@ describe('messenger', function() {
     console: {
       log: function() {},
       error: function() {}
+    },
+    request: {
+      post: function() {}
     }
   });
   describe('assemble message title', function() {
-    var assembleMessageTitle;
+    var assembleMessageTitle, called, makeCalledTrue;
     assembleMessageTitle = messenger.__get__('assembleMessageTitle');
+    called = false;
+    makeCalledTrue = function() {
+      called = true;
+    };
+    beforeEach(function() {
+      called = false;
+    });
     it('should return string when result own all product base fields', function() {
       var testResult;
       testResult = {
@@ -30,32 +40,26 @@ describe('messenger', function() {
       assembleMessageTitle(testResult).should.be.a.String;
     });
     it('should route to result error handler when result id is missing', function() {
-      var called, revert, testResult;
-      called = false;
+      var revert, testResult;
       testResult = {
         site: 'www.example.com',
         url: 'www.example.com/pd/test0000'
       };
       revert = messenger.__set__({
-        resultErrorHandler: function() {
-          called = true;
-        }
+        resultErrorHandler: makeCalledTrue
       });
       assembleMessageTitle(testResult);
       called.should.be["true"];
       revert();
     });
     it('should route to result error handler when result site is missing', function() {
-      var called, revert, testResult;
-      called = false;
+      var revert, testResult;
       testResult = {
         id: 'test0000',
         url: 'www.example.com/pd/test0000'
       };
       revert = messenger.__set__({
-        resultErrorHandler: function() {
-          called = true;
-        }
+        resultErrorHandler: makeCalledTrue
       });
       assembleMessageTitle(testResult);
       called.should.be["true"];

@@ -10,10 +10,22 @@ describe('messenger', ->
     console:
       log: ->
       error: ->
+    request:
+      post: ->
   })
 
   describe('assemble message title', ->
     assembleMessageTitle = messenger.__get__('assembleMessageTitle')
+    called = false
+    makeCalledTrue = ->
+      called = true
+      return
+
+    beforeEach(->
+      called = false
+      return
+    )
+
     it('should return string when result own all product base fields', ->
       testResult =
         id: 'test0000'
@@ -24,14 +36,11 @@ describe('messenger', ->
     )
 
     it('should route to result error handler when result id is missing', ->
-      called = false
       testResult =
         site: 'www.example.com'
         url: 'www.example.com/pd/test0000'
       revert = messenger.__set__({
-        resultErrorHandler: ->
-          called = true
-          return
+        resultErrorHandler: makeCalledTrue
       })
       assembleMessageTitle(testResult)
       called.should.be.true
@@ -40,14 +49,11 @@ describe('messenger', ->
     )
 
     it('should route to result error handler when result site is missing', ->
-      called = false
       testResult =
         id: 'test0000'
         url: 'www.example.com/pd/test0000'
       revert = messenger.__set__({
-        resultErrorHandler: ->
-          called = true
-          return
+        resultErrorHandler: makeCalledTrue
       })
       assembleMessageTitle(testResult)
       called.should.be.true
