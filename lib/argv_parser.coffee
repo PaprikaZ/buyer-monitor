@@ -152,11 +152,7 @@ addHandler = (argv) ->
       return
 
     iter(argv)
-    if MANDATORY_BASE_FIELDS.reduce(((partial, field) ->
-      return partial and record[field]
-    ), true) and MANDATORY_VERDICT_FIELDS.reduce(((partial, field) ->
-      return partial or record[field]
-    ), false)
+    if MANDATORY_BASE_FIELDS.every((field) -> return record[field]) and MANDATORY_VERDICT_FIELDS.some((field) -> return record[field])
       return record
     else
       lackArgHandler()

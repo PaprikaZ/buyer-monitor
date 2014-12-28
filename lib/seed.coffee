@@ -1,15 +1,15 @@
+config = require('./config.js')
+
 httpPrefix = 'http://'
 httpsPrefix = 'https://'
 htmlSuffix = '.html'
 
 MANDATORY_BASE_FIELDS = ['id', 'site']
-MANDATORY_VERDICT_FIELDS = ['price', 'discount', 'instore', 'review', 'benefit']
+MANDATORY_VERDICT_FIELDS = ['price', 'discount', 'instore', 'review', 'benefits']
 AVAILABLE_COMPARES = ['above', 'under', 'equal', 'match']
-_MANDATORY_VERDICT_FIELDS_TYPE = ['number', 'number', 'boolean', 'string', 'string']
-_MANDATORY_VERDICT_METHODS = MANDATORY_VERDICT_FIELDS.forEach((field) ->
+_MANDATORY_VERDICT_METHODS = MANDATORY_VERDICT_FIELDS.map((field) ->
   return 'verdict' + field.slice(0, 1).toUpperCase() + field.substring(1)
 )
-REVIEW_STAR = ['zero', 'half', 'one', 'one-half', 'two', 'two-half', 'three', 'three-half', 'four', 'four-half', 'five']
 
 siteTable =
   amazonCN: {
@@ -34,63 +34,86 @@ siteTable =
              productId + htmlSuffix
   }
 
-getProductUrl = (site, id) ->
-  return (self for _, self of siteTable when self.site == site).pop().generateProductUrl(id)
+generateProductUrl = (site, id) ->
+  matchedItems = (self for _, self of siteTable when self.site == site)
+  if 0 < matchedItems.length
+    return matchedItems.pop().generateProductUrl(id)
+  else
+    siteNotSupportHandler(site)
+  return
 
-returnFalse = ->
-  return false
+siteNotSupportHandler = (site) ->
+  logger.error('site %s is not support yet')
+  throw new Error('product site not support error')
+
+illegalTypeHandler = (id, site, field) ->
+  logger.error('id %s site %s %s verdict with a illegal value', id, site, field)
+  throw new Error('product illegal verdict value error')
+
+verdictMissingHandler = (id, site) ->
+  logger.error('id %s site %s missing verdict field', id, site)
+  throw new Error('product missing verdict field error')
+
+noneVerdictLoadedHandler = (id, site) ->
+  logger.error('id %s site %s none verdict loaded', id, site)
+  throw new Error('none verdict loaded')
 
 class Seed
   constructor: (product) ->
-    for attr, val of product
-      @[attr] = val
-    @url = getProductUrl(@site, @id)
+    self = @
+    MANDATORY_BASE_FIELDS.map((field) -> self[field] = product[field])
+    @url = generateProductUrl(product.site, product.id)
 
-    if product.price and product.price.compare == 'under'
+    (->
+      verdictLoaded = false
+      MANDATORY_VERDICT_FIELDS.map((field) ->
+        if product[field]
+          if product[field].target != 'null'
+            self[field] = product[field]
+            verdictLoaded = true
+          else
+            illegalTypeHandler(product.id, product.site, field)
+        return
+      )
+      not verdictLoaded and verdictMissingHandler(product.id, product.site)
+      return
+    )()
+
+    if product.price
       @verdictPrice = (x) ->
-        return x < product.price.target
-    else if not product.price
-      @verdictPrice = returnFalse
-    else
-      logger.error("unknown price compare keyword %s", product.price.compare)
-      process.exit()
+        return x.price < product.price.target
 
-    if product.discount and product.discount.comapre == 'above'
+    if product.discount
       @verdictDiscount = (x) ->
-        return product.discount.target < x
-    else if not product.discount
-      @verdictDiscount = returnFalse
-    else
-      logger.error("unknown discount compare keyword %s", product.discount.compare)
-      process.exit()
+        return product.discount.target < x.discount
 
-    reviewStar = ["zero", "half", "one", "one-half", "two", "two-half", "three", "three-half", "four", "four-half", "five"]
-    if product.review and product.review.compare = 'above'
-      score = reviewStar.indexOf(product.review)
-      if score != -1
-        @verdictReview = (x) ->
-          return product.review.target < x
-      else
-        logger.error("unknown review target keyword %s", product.review.target)
-    else if not product.review
-      @verdictReview = returnFalse
-    else
-      logger.error("unknown review compare keyword %s", product.review.compare)
-      process.exit
+    if product.review
+      @verdictReview = (x) ->
+        return product.review.target < x.review
 
-    if product.benefit
-      regex = new Regex(product.benefit.regex, product.benefit.option)
-      @verdictBenefits = (benefits) ->
-        return benefits.some((elt, idx, arr) ->
-          return regex.test(elt))
-    else
-      @verdictBenefits = returnFalse
+    if product.instore
+      @verdictInstore = (x) ->
+        return x.instore == product.instore
+
+    if product.benefits
+      regex = new RegExp(product.benefits.regex, product.benefits.option)
+      @verdictBenefits = (x) ->
+        return x.benefits.some((elt) -> return regex.test(elt))
+
+    if _MANDATORY_VERDICT_METHODS.filter((verdict) -> self[verdict]).length == 0
+      noneVerdictLoadedHandler(product.id, product.site)
+
+    return
 
   verdict: (result) ->
-    ret = false
-    ret = @verdictPrice(result.price) or @verdictDiscount(result.discount)
-    ret = ret and @verdictReview(result.review)
-    ret = ret and @verdictBenefits(result.benefits)
+    self = @
+    ret = _MANDATORY_VERDICT_METHODS
+      .filter((verdict) ->
+        return self[verdict]
+      )
+      .reduce(((partial, verdict) ->
+        return partial and self[verdict](result)
+      ), true)
     return ret
 
 module.exports.Seed = Seed
