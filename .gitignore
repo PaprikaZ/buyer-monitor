@@ -1,1 +1,3 @@
 node_modules
+test/cache/*.html
+test/cache/cache.json

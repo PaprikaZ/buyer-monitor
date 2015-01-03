@@ -1,0 +1,30 @@
+{
+  "hashAlgorithm": "md5",
+  "digestEncoding": "hex",
+  "products": [
+    {
+      "id": "B00MFEIJZC",
+      "site": "amazon.cn",
+      "url": "http://www.amazon.cn/dp/B00MFEIJZC",
+      "comment": "apple macbook pro mgxa2ch/a"
+    },
+    {
+      "id": "B00R3X3ZPE",
+      "site": "amazon.cn",
+      "url": "http://www.amazon.cn/dp/B00R3X3ZPE",
+      "comment": "sony a7ii full frame camera"
+    },
+    {
+      "id": "B00CW8WZIS",
+      "site": "amazon.cn",
+      "url": "http://www.amazon.cn/dp/B00CW8WZIS",
+      "comment": "wacom bamboo ctl-671"
+    },
+    {
+      "id": "B008IZ8J9I",
+      "site": "amazon.cn",
+      "url": "http://www.amazon.cn/dp/B008IZ8J9I",
+      "comment": "3m 9001v kn90 mask"
+    }
+    ]
+}
