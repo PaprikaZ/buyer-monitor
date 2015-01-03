@@ -7,15 +7,24 @@ parsedProductsData = JSON.parse(fs.readFileSync(
 hashAlgorithm = parsedProductsData.hashAlgorithm
 digestEncoding = parsedProductsData.digestEncoding
 products = parsedProductsData.products
+htmlTableFile = path.join(__dirname, './html.json')
 
 clean = ->
   htmlFiles = fs.readdirSync(__dirname).filter((filename) ->
-    return /.*\.html$/.test(filename)
+    return /\.html$/.test(filename)
   )
   htmlFiles.map((filename) ->
     fs.unlink(path.join(__dirname, filename))
     return
   )
+  try
+    fs.closeSync(fs.openSync(htmlTableFile, 'r'))
+    fs.unlink(htmlTableFile)
+  catch err
+    if not (err.errno == 34 and err.code == 'ENOENT')
+      throw err
+  finally
+    console.log('clean done.')
   return
 
 build = ->
@@ -26,7 +35,7 @@ build = ->
     counter = products.length
 
     afterCallbacksDone = ->
-      fs.writeFileSync(path.join(__dirname, './html.json'), JSON.stringify(urlToHtmlTable))
+      fs.writeFileSync(htmlTableFile, JSON.stringify(urlToHtmlTable))
       return
 
     callback = (err, res, body, url) ->
