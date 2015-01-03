@@ -1,5 +1,9 @@
+util = require('util')
+path = require('path')
 rewire = require('rewire')
 pageParser = rewire('../lib/page_parser.js')
+cacheDir = './cache'
+urlToHtmlTable = require('./cache/html.json')
 
 describe('page parser', ->
   describe('site selector', ->
@@ -16,25 +20,26 @@ describe('page parser', ->
     return
   )
 
-  describe('amazon cn', ->
-    it('should parse all predefined cached pages as expected')
-    return
-  )
+  createSiteDescribe = (title, siteRegExp) ->
+    describe(title, ->
+      table = {}
+      for url, file of urlToHtmlTable
+        if siteRegExp.test(url)
+          table[url] = path.join(cacheDir, file)
 
-  describe('amazon com', ->
-    it('should parse all predefined cached pages as expected')
+      if 0 < Object.getOwnPropertyNames(table).length
+        for url, file of table
+          behavior = util.format('should parse %s as expect', url)
+          it(behavior)
+      else
+        it('should parse all predefined cached pages as expect')
+      return
+    )
     return
-  )
 
-  describe('amazon jp', ->
-    it('should parse all predefined cached pages as expected')
-    return
-  )
-
-  describe('jingdong', ->
-    it('should parse all predefined cached pages as expected')
-    return
-  )
-
+  createSiteDescribe('amazon cn', /amazon\.cn/)
+  createSiteDescribe('amazon us', /amazon\.com/)
+  createSiteDescribe('amazon jp', /amazon\.co\.jp/)
+  createSiteDescribe('jingdong', /jd\.com/)
   return
 )
