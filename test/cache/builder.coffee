@@ -26,7 +26,7 @@ build = ->
     counter = products.length
 
     afterCallbacksDone = ->
-      fs.writeFileSync(path.join(__dirname, './cache.json'), JSON.stringify(urlToHtmlTable))
+      fs.writeFileSync(path.join(__dirname, './html.json'), JSON.stringify(urlToHtmlTable))
       return
 
     callback = (err, res, body, url) ->

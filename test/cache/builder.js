@@ -35,7 +35,7 @@ build = function() {
     urlToHtmlTable = {};
     counter = products.length;
     afterCallbacksDone = function() {
-      fs.writeFileSync(path.join(__dirname, './cache.json'), JSON.stringify(urlToHtmlTable));
+      fs.writeFileSync(path.join(__dirname, './html.json'), JSON.stringify(urlToHtmlTable));
     };
     callback = function(err, res, body, url) {
       var fileName, md5sum;
