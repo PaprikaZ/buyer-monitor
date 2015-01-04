@@ -1,6 +1,6 @@
 request = require('request')
 config = require('./config.js')
-Parser = require('./page_parser.js').newParser
+Parser = require('./page_parser.js').createParser
 Messenger = require('./messenger.js')
 DBClient = require('./db_client.js')
 client = DBClient()

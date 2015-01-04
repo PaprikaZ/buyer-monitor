@@ -1,3 +1,4 @@
+config = require('./config.js')
 cheerio = require('cheerio')
 
 _MANDATORY_PARSE_FIELDS = ['title', 'price', 'fullPrice', 'review', 'instore', 'benefits']
@@ -36,10 +37,10 @@ class Parser
     if allFieldOk
       return result
     else
-      return logger.error("%s parse page failed", @constructor.name)
+      return logger.error('%s parse page failed', @constructor.name)
 
   title: (selector) ->
-    return "unknown"
+    return 'unknown'
   price: (selector) ->
     return -1
   fullPrice: (selector) ->
@@ -100,12 +101,13 @@ class AmazonJPParser extends Parser
 class JingdongParser extends Parser
 
 module.exports.MANDATORY_FIELDS = MANDATORY_FIELDS
-module.exports.newParser = (site) ->
-  newParser =
+module.exports.createParser = (site) ->
+  parser =
     switch site
       when 'www.amazon.cn' then new AmazonCNParser()
       when 'www.amazon.com' then new AmazonUSParser()
       when 'www.amazon.co.jp' then new AmazonJPParser()
       when 'www.jd.com' then new JingdongParser()
-      else logger.error("no available page parser for site %s", site)
-  return newParser
+      else
+        logger.error('no available page parser for site %s', site)
+  return parser
