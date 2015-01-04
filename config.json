@@ -3,6 +3,7 @@
   "resendDelay": 86400000,
 
   "logFileName": "ebuy_monitor.log",
+  "loggerLevel": "info",
   "productFileName": "product.json",
 
   "redisHost": "127.0.0.1",
