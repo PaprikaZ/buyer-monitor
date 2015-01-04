@@ -1,5 +1,9 @@
 request = require('request')
+util = require('util')
 config = require('./config.js')
+s = require('./seed.js')
+MANDATORY_EXPAND_FIELDS = s.MANDATORY_EXPAND_FIEL
+MANDATORY_BASE_FIELDS = s.MANDATORY_BASE_FIELDS
 createParser = require('./page_parser.js').createParser
 Messenger = require('./messenger.js')
 db = require('./db_client.js')
@@ -12,55 +16,68 @@ class Visitor
   visit: ->
     self = this
     request.get(self.seed.url, (err, res, body) ->
-      if not err and res.statusCode == 200
-        self.processPage(body)
-      else if not err and res.statusCode != 200
-        self.errorResponseHandler(err, res, body)
+      if not err
+        if res.statusCode == 200
+          self.processPage(body)
+        else
+          self.errorResponseHandler(res, body)
       else
-        self.failedRequestHandler(err, res, body)
-      return)
+        self.failedRequestHandler(err)
+      return
+    )
     return
 
-  failedRequestHandler: (err, res, body) ->
-    logger.error("%s visitor request failed.", @constructor.name)
-    logger.error("err: %s", err)
+  failedRequestHandler: (err) ->
+    logger.error('%s request failed.', @constructor.name)
+    logger.error('msg: %s', err.message)
+    throw err
     return
 
-  errorResponseHandler: (err, res, body) ->
-    logger.error("%s visitor response error.", @constructor.name)
-    logger.error("url: %s", @seed.url)
-    logger.error("response status code: %s", res.statusCode)
-    logger.error("response body: %s", body)
+  errorResponseHandler: (res, body) ->
+    logger.error('%s response error.', @constructor.name)
+    logger.error('url: %s', res.url)
+    logger.error('status code: %s', res.statusCode)
+    logger.error('body: %s', body)
     return
 
   processPage: (html) ->
     date = new Date()
     result = @parsePage(html)
-    @pushQueue(result)
+
+    if @seed.verdict(result)
+      delayDebugMsg = 'push delay '
+      MANDATORY_BASE_FIELDS.map((field) ->
+        delayDebugMsg += util.format('%s %s', field, result[field])
+        return
+      )
+      logger.debug(delayDebugMsg)
+
+      messenger = new Messenger()
+      messenger.push(result)
+
+      pushMsg = {}
+      MANDATORY_BASE_FIELDS.map((field) ->
+        pushMsg[field] = result[field]
+        return
+      )
+      @client.lpush(config.pushQueueKey, JSON.stringify(pushMsg))
 
     result.date = date.toUTCString()
-    @pushRecord(result)
+    @client.lpush(config.historyKey, JSON.stringify(result))
     return
 
   parsePage: (html) ->
-    parser = createParser(@seed.site)
-    result = id: @seed.id, site: @seed.site, url: @seed.url
-    for attr, val of parser.parse(html)
+    self = @
+    result = {}
+    MANDATORY_EXPAND_FIELDS.map((field) ->
+      result[field] = self.seed[field]
+      return
+    )
+
+    for attr, val of createParser(@seed.site).parse(html)
       result[attr] = val
     logger.info(result)
     return result
-
-  pushQueue: (result) ->
-    if @seed.verdict(result)
-      messenger = new Messenger()
-      messenger.push(result)
-      logger.debug("push delay id %s site %s", result.id, result.site)
-      client.lpush(config.pushQueueKey, JSON.stringify({id: result.id, site:result.site}))
-    return
-
-  pushRecord: (record) ->
-    client.lpush(config.historyKey, JSON.stringify(record))
-    return
 
 class AmazonCNVisitor extends Visitor
 
@@ -77,5 +94,7 @@ module.exports.createVisitor = (seed) ->
       when 'www.amazon.cn' then new AmazonCNVisitor(seed)
       when 'www.amazon.co.jp' then new AmazonJPVisitor(seed)
       when 'www.jd.com' then new JingDongVisitor(seed)
-      else logger.warn("there is no available visitor for site %s", seed.site)
+      else
+        logger.error('there is no available visitor for site %s', seed.site)
+        throw new Error('no available visitor')
   return visitor
