@@ -2,12 +2,12 @@ request = require('request')
 config = require('./config.js')
 createParser = require('./page_parser.js').createParser
 Messenger = require('./messenger.js')
-DBClient = require('./db_client.js')
-client = DBClient()
+db = require('./db_client.js')
 
 class Visitor
   constructor: (seed) ->
     @seed = seed
+    @client = db.getClient()
 
   visit: ->
     self = this

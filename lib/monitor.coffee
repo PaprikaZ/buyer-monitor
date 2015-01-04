@@ -5,7 +5,7 @@ request = require('request')
 config = require('./config.js')
 createVisitor = require('./visitor.js').createVisitor
 Seed = require('./seed.js').Seed
-DBClient = require('./db_client.js')
+db = require('./db_client.js')
 productFile = '../product.json'
 
 class Monitor
@@ -19,7 +19,7 @@ class Monitor
         return new Seed(item))
     logger.info("load seeds ok.")
 
-    @client = DBClient()
+    @client = db.getClient()
     @client.del(config.pushQueueKey, (err, res) ->
       if err
         logger.error("Clear push queue %s failed.", config.pushQueueKey)
@@ -124,6 +124,7 @@ class Monitor
     return
 
 launch = ->
+  db.createClient()
   monitor = new Monitor()
   monitor.start()
   return
@@ -133,7 +134,7 @@ module.exports.launch = ->
   return
 module.exports.config = require('./config.js')
 module.exports.argvParser = require('./argv_parser.js')
-module.exports.DBClient = require('./db_client.js')
+module.exports.DB = require('./db_client.js')
 module.exports.Messenger = require('./messenger.js')
 module.exports.PageParser = require('./page_parser.js')
 module.exports.Seed = require('./seed.js')
