@@ -1,6 +1,6 @@
 request = require('request')
 config = require('./config.js')
-Parser = require('./page_parser.js').createParser
+createParser = require('./page_parser.js').createParser
 Messenger = require('./messenger.js')
 DBClient = require('./db_client.js')
 client = DBClient()
@@ -43,7 +43,7 @@ class Visitor
     return
 
   parsePage: (html) ->
-    parser = Parser(@seed.site)
+    parser = createParser(@seed.site)
     result = id: @seed.id, site: @seed.site, url: @seed.url
     for attr, val of parser.parse(html)
       result[attr] = val
@@ -70,12 +70,12 @@ class AmazonJPVisitor extends Visitor
 
 class JingDongVisitor extends Visitor
 
-module.exports = (seed) ->
-  newVisitor =
+module.exports.createVisitor = (seed) ->
+  visitor =
     switch seed.site
       when 'www.amazon.com' then new AmazonUSVisitor(seed)
       when 'www.amazon.cn' then new AmazonCNVisitor(seed)
       when 'www.amazon.co.jp' then new AmazonJPVisitor(seed)
       when 'www.jd.com' then new JingDongVisitor(seed)
       else logger.warn("there is no available visitor for site %s", seed.site)
-  return newVisitor
+  return visitor

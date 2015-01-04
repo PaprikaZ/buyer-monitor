@@ -3,7 +3,7 @@ path = require('path')
 async = require('async')
 request = require('request')
 config = require('./config.js')
-Visitor = require('./visitor.js')
+createVisitor = require('./visitor.js').createVisitor
 Seed = require('./seed.js').Seed
 DBClient = require('./db_client.js')
 productFile = '../product.json'
@@ -89,7 +89,7 @@ class Monitor
 
   sendRequests: ->
     visit = (seed) ->
-      v = Visitor(seed)
+      v = createVisitor(seed)
       v.visit()
       return
     if @seeds.length != 0
