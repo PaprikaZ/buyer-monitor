@@ -83,7 +83,7 @@ listHandler = ->
               ', benefits match \/%s\/%s', product[field].regex, product[field].option)
           else
             output += util.format(
-              ', %s %s', field, product[field].target)
+              ', %s %s %s', field, product[field].compare, product[field].target)
         return
       )
       output = output.slice(2)
