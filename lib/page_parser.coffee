@@ -46,7 +46,7 @@ class Parser
   fullPrice: (selector) ->
     return -1
   review: (selector) ->
-    return zeroStar
+    return review.unknownStar
   instore: (selector) ->
     return false
   benefits: (selector) ->
