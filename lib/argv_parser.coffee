@@ -172,9 +172,9 @@ addHandler = (argv) ->
     filteredProducts.push(record)
     fs.writeFileSync(productFile, JSON.stringify(filteredProducts))
     if filteredProducts.length == products.length
-      console.log('add done.')
-    else
       console.log('id %s, site %s update done.', record.id, record.site)
+    else
+      console.log('add done.')
     return
 
   writeRecord(analyze())
