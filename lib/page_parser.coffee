@@ -110,4 +110,5 @@ module.exports.createParser = (site) ->
       when 'www.jd.com' then new JingdongParser()
       else
         logger.error('no available page parser for site %s', site)
+        throw new Error('no available parser')
   return parser
