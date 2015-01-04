@@ -67,20 +67,26 @@ listHandler = ->
   console.log('Products monitored:')
   products = JSON.parse(fs.readFileSync(productFile))
   if 0 < products.length
-    products.forEach((elt, index, arr) ->
-      output = util.format('id %s site %s ', elt.id, elt.site)
-      if elt.price
-        output += util.format( 'price %s %s ', elt.price.compare, elt.price.target)
-      if elt.discount
-        output += util.format(
-          'discount %s %s\%off ', elt.discount.compare, elt.discount.target)
-      if elt.review
-        output += util.format(
-          'review %s %s ', elt.review.compare, elt.review.target)
-      if elt.benefits
-        output += util.format(
-          'benefits match \/%s\/%s',
-          elt.benefits.regex, elt.benefits.option)
+    products.forEach((product) ->
+      output = ''
+      MANDATORY_BASE_FIELDS.map((field) ->
+        output += util.format(', %s %s', field, product[field])
+        return
+      )
+      MANDATORY_VERDICT_FIELDS.map((field) ->
+        if product[field]
+          if product[field].compare == 'equal'
+            output += util.format(
+              ', %s? %s', field, product[field].target)
+          else if field == 'benefits' and product[field].compare == 'match'
+            output += util.format(
+              ', benefits match \/%s\/%s', product[field].regex, product[field].option)
+          else
+            output += util.format(
+              ', %s %s', field, product[field].target)
+        return
+      )
+      output = output.slice(2)
       console.log(output)
       return
     )
