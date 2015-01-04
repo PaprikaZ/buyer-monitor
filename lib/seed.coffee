@@ -5,6 +5,7 @@ httpsPrefix = 'https://'
 htmlSuffix = '.html'
 
 MANDATORY_BASE_FIELDS = ['id', 'site']
+MANDATORY_EXPAND_FIELDS = ['id', 'site', 'url']
 MANDATORY_VERDICT_FIELDS = ['price', 'discount', 'instore', 'review', 'benefits']
 AVAILABLE_COMPARES = ['above', 'under', 'equal', 'match']
 _MANDATORY_VERDICT_METHODS = MANDATORY_VERDICT_FIELDS.map((field) ->
@@ -118,5 +119,6 @@ class Seed
 
 module.exports.Seed = Seed
 module.exports.MANDATORY_BASE_FIELDS = MANDATORY_BASE_FIELDS
+module.exports.MANDATORY_EXPAND_FIELDS = MANDATORY_EXPAND_FIELDS
 module.exports.MANDATORY_VERDICT_FIELDS = MANDATORY_VERDICT_FIELDS
 module.exports.AVAILABLE_COMPARES = AVAILABLE_COMPARES
