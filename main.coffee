@@ -1,1 +1,1 @@
-require('./lib/monitor.js').launch()
+require('./lib/launcher.js').launch()

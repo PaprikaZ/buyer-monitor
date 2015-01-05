@@ -123,19 +123,5 @@ class Monitor
     @verifyUserTokens()
     return
 
-launch = ->
-  db.createClient()
-  monitor = new Monitor()
-  monitor.start()
-  return
-
-module.exports.launch = ->
-  require('./argv_parser.js').parse(process.argv.slice(2), launch)
-  return
-module.exports.config = require('./config.js')
-module.exports.argvParser = require('./argv_parser.js')
-module.exports.DB = require('./db_client.js')
-module.exports.Messenger = require('./messenger.js')
-module.exports.PageParser = require('./page_parser.js')
-module.exports.Seed = require('./seed.js')
-module.exports.Visitor = require('./visitor.js')
+module.exports.createMonitor = ->
+  return new Monitor()
