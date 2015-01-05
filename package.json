@@ -1,7 +1,7 @@
 {
   "name": "ebuy_monitor",
   "description": "Personal ebuy price monitor tool",
-  "main": "./main.js",
+  "main": "./app.js",
   "author": {
     "name": "Zhu Jie <sms.extreme@gmail.com>"
   },
