@@ -16,15 +16,13 @@ shortenToken = (token) ->
 
 class Monitor
   constructor: ->
-    self = @
-
     @client = db.getClient()
     
     if 0 < config.accounts.length
       @accessTokens = config.accounts.map((account) ->
         return account.accessToken)
     else
-      throw new Error('access token empty')
+      throw new Error('access tokens empty')
 
     verdicts = JSON.parse(fs.readFileSync(path.join(__dirname, productFile)))
     if 0 < verdicts.length
@@ -33,7 +31,7 @@ class Monitor
       throw new Error('products empty')
     logger.debug('load seeds ok.')
 
-  verifyUserTokens: (callback) ->
+  verifyUserTokens: ->
     self = @
     problemTokens = []
     logger.info('user access tokens verifying ...')
@@ -48,7 +46,7 @@ class Monitor
             return problemTokens.indexOf(token) == -1
           )
           if self.accessTokens.length != 0
-            callback()
+            self.startMonitoring()
           else
             throw new Error('all access token is invalid')
         return
@@ -69,15 +67,10 @@ class Monitor
           logger.error('%s %s', shortToken, err.message)
           problemTokens.push(token)
           logger.info('%s removed from subscribers', shortToken)
-        else if res.statusCode == 401
-          logger.warn('token %s is invalid', shortToken)
-          logger.warn('%s status code: %s', shortToken, res.statusCode)
-          logger.warn('%s message: %s', shortToken, body)
-          problemTokens.push(token)
-          logger.info('%s removed from subscribers', shortToken)
         else
           logger.warn('token %s is invalid', shortToken)
           logger.warn('%s status code: %s', shortToken, res.statusCode)
+          logger.warn('%s url: %s', shortToken, res.url)
           logger.warn('%s message: %s', shortToken, body)
           problemTokens.push(token)
           logger.info('%s removed from subscribers', shortToken)
@@ -91,8 +84,8 @@ class Monitor
 
   delaySeed: (id, site) ->
     self = @
-    previousSeeds = self.seeds
-    self.seeds = previousSeeds.filter((s) -> s.id != id or s.site != site)
+    previousSeeds = @seeds
+    @seeds = previousSeeds.filter((s) -> s.id != id or s.site != site)
     previousSeeds
       .filter((s) -> return s.id == id and s.site == site)
       .forEach((s) ->
@@ -120,34 +113,33 @@ class Monitor
       )
     return
 
-  startMonitorInterval: ->
+  startMonitoring: ->
     self = @
 
-    setInterval((->
-      iter = ->
-        self.client.rpop(config.redisPushQueueKey, (err, res) ->
-          if not err
-            if res
-              item = JSON.parse(res)
-              self.delaySeed(item.id, item.site)
-              iter()
-            else
-              logger.debug('delay push queue done')
-              self.sendRequests()
+    iter = ->
+      self.client.rpop(config.redisPushQueueKey, (err, res) ->
+        if not err
+          if res
+            item = JSON.parse(res)
+            self.delaySeed(item.id, item.site)
+            iter()
           else
-            logger.error('rpop push queue caught error')
-            logger.error('message: %s', err.message)
-            throw err
-          return
-        )
+            logger.debug('delay push queue done')
+            self.sendRequests()
+        else
+          logger.error('rpop push queue caught error')
+          logger.error('message: %s', err.message)
+          throw err
         return
-      iter()
+      )
       return
-    ), config.monitorInterval)
+
+    iter()
+    setInterval(iter, config.monitorInterval)
     return
 
   start: ->
-    @verifyUserTokens(@startMonitorInterval)
+    @verifyUserTokens()
     return
 
 module.exports.createMonitor = ->
