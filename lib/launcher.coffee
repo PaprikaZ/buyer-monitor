@@ -1,4 +1,4 @@
-db = require('./db_client.js')
+db = require('./db.js')
 monitor = require('./monitor.js')
 
 module.exports.launch = ->

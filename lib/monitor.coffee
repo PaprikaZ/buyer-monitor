@@ -4,8 +4,10 @@ async = require('async')
 request = require('request')
 config = require('./config.js')
 createVisitor = require('./visitor.js').createVisitor
-Seed = require('./seed.js').Seed
-db = require('./db_client.js')
+s = require('./seed.js')
+Seed = s.Seed
+MANDATORY_BASE_FIELDS = s.MANDATORY_BASE_FIELDS
+db = require('./db.js')
 productFile = '../product.json'
 
 class Monitor

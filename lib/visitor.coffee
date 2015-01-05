@@ -6,7 +6,7 @@ MANDATORY_EXPAND_FIELDS = s.MANDATORY_EXPAND_FIEL
 MANDATORY_BASE_FIELDS = s.MANDATORY_BASE_FIELDS
 createParser = require('./page_parser.js').createParser
 Messenger = require('./messenger.js')
-db = require('./db_client.js')
+db = require('./db.js')
 
 class Visitor
   constructor: (seed) ->
