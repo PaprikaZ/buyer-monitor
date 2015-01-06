@@ -5,7 +5,7 @@ s = require('./seed.js')
 MANDATORY_EXPAND_FIELDS = s.MANDATORY_EXPAND_FIEL
 MANDATORY_BASE_FIELDS = s.MANDATORY_BASE_FIELDS
 createParser = require('./page_parser.js').createParser
-Messenger = require('./messenger.js')
+messenger = require('./messenger.js')
 db = require('./db.js')
 
 class Visitor
@@ -52,15 +52,14 @@ class Visitor
       )
       logger.debug(delayDebugMsg)
 
-      messenger = new Messenger()
-      messenger.push(result)
+      @client.lpush(config.redisPushQueueKey, JSON.stringify(result))
 
       pushMsg = {}
       MANDATORY_BASE_FIELDS.map((field) ->
         pushMsg[field] = result[field]
         return
       )
-      @client.lpush(config.pushQueueKey, JSON.stringify(pushMsg))
+      @client.lpush(config.redisDelayQueueKey, JSON.stringify(pushMsg))
 
     result.date = date.toUTCString()
     @client.lpush(config.historyKey, JSON.stringify(result))

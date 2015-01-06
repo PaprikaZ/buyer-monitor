@@ -1,89 +1,92 @@
 util = require('util')
 request = require('request')
 config = require('./config.js')
-PARSE_FIELDS = require('./page_parser.js').MANDATORY_FIELDS
-PRODUCT_BASE_FIELDS = require('./seed.js').MANDATORY_BASE_FIELDS
-
-accessTokens = config.accounts.map((account) ->
-  return account.accessToken)
+MANDATORY_PARSE_FIELDS = require('./page_parser.js').MANDATORY_FIELDS
+SEED_BASE_FIELDS = require('./seed.js').MANDATORY_BASE_FIELDS
 
 assembleMessageTitle = (result) ->
-  if PRODUCT_BASE_FIELDS.reduce(((partial, field) -> return partial and result[field]), true)
-    title = util.format('id %s on site %s meet your requirement', result.id, result.site)
+  title = ''
+
+  if SEED_BASE_FIELDS.every((field) -> result[field])
+    SEED_BASE_FIELDS.map((field) ->
+      title += util.format(', %s %s', field, result[field])
+      return
+    )
+    title += ' meet your requirements'
   else
-    logger.error('there is product base field missing')
-    resultErrorHandler()
-  return title
+    fieldMissingHandler(SEED_BASE_FIELDS.join(' or '))
+  return title.slice(2)
 
 assembleMessageBody = (result) ->
-  if PARSE_FIELDS.reduce(((partial, field) -> return partial and result[field]), true)
-    body =  util.format('Title: %s\n', result.title)
-    body += util.format('Url: %s\n', result.url)
-    body += util.format('Price: %s        full price: %s\n', result.price, result.fullPrice)
-    body += util.format('Discount: %s\% OFF\n', Math.round(result.discount))
-    body += util.format('Review: %s\n', result.review)
-    body += util.format('Instore: %s\n', (result.instore? 'yes' : 'no'))
-    if 0 < result.benefits.length
-      result.benefits.forEach((benefit, idx) ->
-        body += util.format('Benefit%s: %s\n', idx, benefit)
-        return
-      )
-    else
-      body += 'Benefits: none\n'
-  else
-    logger.error('there is parse field missing')
-    resultErrorHandler()
-  return body
+  body = ''
 
-push = (result) ->
-  logger.debug('id %s site %s ready to be pushed', result.id, result.site)
-  if 0 < accessTokens.length
-    messenge =
-      type: 'note'
-      title: assembleMessageTitle(result)
-      body: assembleMessageBody(result)
-
-    accessTokens.map((token) ->
-      shortToken = token.slice(0, 7)
-      postOptions =
-        url: config.pushServiceUrl
-        auth:
-          user: token
-        headers:
-          'content-type': 'application/json'
-        body: JSON.stringify(messenge)
-
-      request.post(postOptions, (err, res, body) ->
-        if not err
-          if res.statusCode == 200
-            logger.info('push message to user %s ok.', shortToken)
-          else
-            responseErrorHandler(shortToken, res, body)
-        else
-          requestErrorHandler(shortToken, err)
-        return
-      )
+  if MANDATORY_PARSE_FIELDS.every((field) -> result[field])
+    MANDATORY_PARSE_FIELDS.map((field) ->
+      if Array.isArray(result[field])
+        body += util.format('%s:\n', field)
+        result[field].map((item) ->
+          body += util.format('  %s', item)
+          return
+        )
+      else if field == 'discount'
+        body += util.format('%s: %s\n', field, Math.round(result[field]))
+      else
+        body += util.format('%s: %s\n', field, result[field])
+      return
     )
   else
-    logger.error('no available tokens')
-    tokenEmptyHandler()
+    fieldMissingHandler(MANDATORY_PARSE_FIELDS.join(' or '))
+  return body
+
+shortenToken = (token) -> token.slice(0, 7)
+push = (result, token) ->
+  debugMsg = ''
+  SEED_BASE_FIELDS.map((field) ->
+    debugMsg += util.format('%s %s', field, result[field])
+    return
+  )
+  debugMsg += 'ready to be pushed'
+  logger.debug(debugMsg)
+
+  shortToken = shortenToken(token)
+  messenge =
+    type: 'note'
+    title: assembleMessageTitle(result)
+    body: assembleMessageBody(result)
+  postOptions =
+    url: config.pushServiceUrl
+    auth:
+      user: token
+    headers:
+      'content-type': 'application/json'
+    body: JSON.stringify(messenge)
+
+  request.post(postOptions, (err, res, body) ->
+    if not err
+      if res.statusCode == 200
+        logger.info('push message to user %s ok.', shortToken)
+      else
+        responseErrorHandler(shortToken, res, body)
+    else
+      requestErrorHandler(shortToken, err)
+    return
+  )
   return
 
-tokenEmptyHandler = ->
-  throw new Error('no available tokens')
-
-resultErrorHandler = ->
-  throw new Error('result attributes error')
+fieldMissingHandler = (fields) ->
+  logger.error('%s is missing', fields)
+  throw new Error('data error, missing necessary fields')
 
 responseErrorHandler = (token, res, body) ->
   logger.error('http post response error.')
-  logger.error('token %s response status code: %s', token, res.statusCode)
-  logger.error('token %s body: %s', token, body)
+  logger.error('%s url: %s', token, res.url)
+  logger.error('%s status code: %s', token, res.statusCode)
+  logger.error('%s body: %s', token, body)
   throw new Error('push message response error')
 
 requestErrorHandler = (token, err) ->
   logger.error('http post request error.')
-  logger.error('token %s, error %s', token, err.message)
+  logger.error('%s, error %s', token, err.message)
   throw err
 
-module.exports.push = push
+module.exports = exports = push

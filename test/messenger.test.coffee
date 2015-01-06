@@ -1,63 +1,70 @@
 rewire = require('rewire')
-messenger = rewire('../lib/messenger.js')
 
 describe('messenger', ->
+  messenger = rewire('../lib/messenger.js')
   messenger.__set__({
     logger:
       debug: ->
       info: ->
       error: ->
-    console:
-      log: ->
-      error: ->
-    request:
-      post: ->
   })
+
+  testID = 'test0000'
+  testSite = 'www.example.com'
+  testUrl = 'www.example.com/pd/test0000'
+  testToken = 'ffffffff'
+  mockErrorMsg = 'mock request error'
 
   describe('assemble message title', ->
     assembleMessageTitle = messenger.__get__('assembleMessageTitle')
+
     called = false
     makeCalledTrue = ->
       called = true
       return
-
-    beforeEach(->
+    makeCalledFalse = ->
       called = false
       return
+    restore = null
+    beforeEach(->
+      makeCalledFalse()
+      restore = messenger.__set__({
+        fieldMissingHandler: ->
+      })
+      return
     )
+    afterEach(-> restore())
 
-    it('should return string when result own all product base fields', ->
+    it('should return title when result owns base fields', ->
       testResult =
-        id: 'test0000'
-        site: 'www.example.com'
-        url: 'www.example.com/pd/test0000'
+        id: testID
+        site: testUrl
+        url: testUrl
       assembleMessageTitle(testResult).should.be.a.String
       return
     )
 
-    it('should route to result error handler when result id is missing', ->
+    it('should route to field missing handler when result id missing', ->
       testResult =
-        site: 'www.example.com'
-        url: 'www.example.com/pd/test0000'
-      revert = messenger.__set__({
-        resultErrorHandler: makeCalledTrue
+        site: testSite
+        url: testUrl
+      messenger.__set__({
+        fieldMissingHandler: makeCalledTrue
       })
       assembleMessageTitle(testResult)
       called.should.be.true
-      revert()
       return
     )
 
-    it('should route to result error handler when result site is missing', ->
+    it('should route to field missing handler when result site missing', ->
       testResult =
-        id: 'test0000'
-        url: 'www.example.com/pd/test0000'
-      revert = messenger.__set__({
-        resultErrorHandler: makeCalledTrue
+        id: testID
+        url: testUrl
+      messenger.__set__({
+        fieldMissingHandler: makeCalledTrue
       })
       assembleMessageTitle(testResult)
       called.should.be.true
-      revert()
       return
     )
     return
@@ -66,11 +73,28 @@ describe('messenger', ->
   describe('assemble message body', ->
     assembleMessageBody = messenger.__get__('assembleMessageBody')
 
-    it('should return string when result own all parse fields', ->
+    called = false
+    makeCalledTrue = ->
+      called = true
+      return
+    makeCalledFalse = ->
+      called = false
+      return
+    restore = null
+    beforeEach(->
+      makeCalledFalse()
+      restore = messenger.__set__({
+        fieldMissingHandler: ->
+      })
+      return
+    )
+    afterEach(-> restore())
+
+    it('should return body when result own all parsed fields', ->
       testResult =
-        id: 'test0000'
-        site: 'www.example.com'
-        url: 'www.example.com/pd/test0000'
+        id: testID
+        site: testSite
+        url: testUrl
         title: 'product test title'
         price: 1
         fullPrice: 1
@@ -82,20 +106,22 @@ describe('messenger', ->
       return
     )
 
-    it('should route to result error handler when parse fields of result is missing', ->
-      called = false
+    it('should route to field missing handler when some parse fields missing', ->
       testResult =
-        id: 'test0000'
-        site: 'www.example.com'
-        url: 'www.example.com/pd/test0000'
-      revert = messenger.__set__({
-        resultErrorHandler: ->
-          called = true
-          return
+        id: testID
+        site: testSite
+        url: testUrl
+        title: 'product test title'
+        price: 1
+        discount: 10
+        review: 9
+        instore: true
+        benefits: []
+      messenger.__set__({
+        fieldMissingHandler: makeCalledTrue
       })
       assembleMessageBody(testResult)
       called.should.be.true
-      revert()
       return
     )
     return
@@ -103,18 +129,10 @@ describe('messenger', ->
 
   describe('push', ->
     push = messenger.__get__('push')
-    called = false
-    makeCalledTrue = ->
-      called = true
-      return
-    beforeEach(->
-      called = false
-      return
-    )
     result =
-      id: 'test0000'
-      site: 'www.example.com'
-      url: 'www.example.com/pd/test0000'
+      id: testID
+      site: testSite
+      url: testUrl
       title: 'product test title'
       price: 1
       fullPrice: 1
@@ -123,119 +141,72 @@ describe('messenger', ->
       instore: true
       benefits: []
 
-    it('should log push success message when http post response ok', ->
-      revert = messenger.__set__({
-        accessTokens: ['ffffffff']
-        logger:
-          debug: ->
-          info: (log) ->
-            if /^push message to user/.test(log)
-              makeCalledTrue()
-            return
-          error: ->
+    called = false
+    makeCalledTrue = ->
+      called = true
+      return
+    makeCalledFalse = ->
+      called = false
+      return
+    restore = null
+    beforeEach(->
+      makeCalledFalse()
+      restore = messenger.__set__({
+        responseErrorHandler: ->
+        requestErrorHandler: ->
+        request:
+          post: ->
+      })
+      return
+    )
+    afterEach(-> restore())
+
+    it('should not throw error when http post success', ->
+      messenger.__set__({
         request:
           post: (url, callback) ->
+            makeCalledTrue()
             callback(null, {statusCode: 200}, '')
             return
       })
-      push(result)
+      push.bind(null, result, testToken).should.not.throw()
       called.should.be.true
-      revert()
       return
     )
 
-    it('should first assemble message title', ->
-      revert = messenger.__set__({
-        accessTokens: ['ffffffff']
-        assembleMessageTitle: makeCalledTrue
-      })
-      push(result)
-      called.should.be.true
-      revert()
-      return
-    )
-
-    it('should first assemble message body', ->
-      revert = messenger.__set__({
-        accessTokens: ['ffffffff']
-        assembleMessageBody: makeCalledTrue
-      })
-      push(result)
-      called.should.be.true
-      revert()
-      return
-    )
-
-    it('should send http post request when there is available user tokens', ->
-      revert = messenger.__set__({
-        accessTokens: ['ffffffff']
-        request:
-          post: makeCalledTrue
-      })
-      push(result)
-      called.should.be.true
-      revert()
-      return
-    )
-
-    it('should route to token empty handler when no available access tokens', ->
-      revert = messenger.__set__({
-        accessTokens: []
-        tokenEmptyHandler: makeCalledTrue
-      })
-      push(result)
-      called.should.be.true
-      revert()
-      return
-    )
-
-    it('should route to response error handler when status code not equal to 200', ->
-      revert = messenger.__set__({
-        accessTokens: ['ffffffff']
+    it('should route to response error handler when response nok', ->
+      messenger.__set__({
         request:
           post: (url, callback) ->
             callback(null, {statusCode: -1}, '')
             return
         responseErrorHandler: makeCalledTrue
       })
-      push(result)
+      push(result, testToken)
       called.should.be.true
-      revert()
       return
     )
 
     it('should route to request error handler when request caught error', ->
-      mockErrorMsg = 'mock request error'
-      revert = messenger.__set__({
-        accessTokens: ['ffffffff']
+      messenger.__set__({
         request:
           post: (url, callback) ->
-            callback(new Error(mockErrorMsg), null, null)
+            callback(new Error(mockErrorMsg))
             return
         requestErrorHandler: makeCalledTrue
       })
-      push(result)
+      push(result, testToken)
       called.should.be.true
-      revert()
       return
     )
     return
   )
 
-  describe('token empty handler', ->
-    tokenEmptyHandler = messenger.__get__('tokenEmptyHandler')
-
-    it('should throw empty error', ->
-      tokenEmptyHandler.should.throw('no available tokens')
-    )
-    return
-  )
-
-  describe('result error handler', ->
-    resultErrorHandler = messenger.__get__('resultErrorHandler')
-
-    it('should throw result error', ->
-      resultErrorHandler.should.throw('result attributes error')
+  describe('field missing handler', ->
+    fieldMissingHandler = messenger.__get__('fieldMissingHandler')
+    it('should throw error', ->
+      fieldMissingHandler.bind(null, 'foo')
+        .should.throw('data error, missing necessary fields')
       return
     )
     return
@@ -243,9 +214,9 @@ describe('messenger', ->
 
   describe('response error handler', ->
     responseErrorHandler = messenger.__get__('responseErrorHandler')
-
-    it('should throw response error', ->
-      responseErrorHandler.bind(null, 'ffffffff', {statusCode: -1}, '')
+    it('should throw error', ->
+      responseErrorHandler.bind(
+        null, testToken, {url: testSite, statusCode: -1}, '')
         .should.throw('push message response error')
       return
     )
@@ -254,10 +225,8 @@ describe('messenger', ->
 
   describe('request error handler', ->
     requestErrorHandler = messenger.__get__('requestErrorHandler')
-    mockErrorMsg = 'mock request error'
-
-    it('should throw request error', ->
-      requestErrorHandler.bind(null, 'ffffffff', new Error(mockErrorMsg))
+    it('should throw error', ->
+      requestErrorHandler.bind(null, testToken, new Error(mockErrorMsg))
         .should.throw(mockErrorMsg)
       return
     )

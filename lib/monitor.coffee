@@ -4,6 +4,7 @@ path = require('path')
 async = require('async')
 request = require('request')
 config = require('./config.js')
+messenger = require('./messenger.js')
 createVisitor = require('./visitor.js').createVisitor
 s = require('./seed.js')
 Seed = s.Seed
@@ -116,26 +117,52 @@ class Monitor
   startMonitoring: ->
     self = @
 
-    iter = ->
-      self.client.rpop(config.redisPushQueueKey, (err, res) ->
-        if not err
-          if res
-            item = JSON.parse(res)
-            self.delaySeed(item.id, item.site)
-            iter()
+    monitor = ->
+      iter = ->
+        self.client.rpop(config.redisDelayQueueKey, (err, res) ->
+          if not err
+            if res
+              item = JSON.parse(res)
+              self.delaySeed(item.id, item.site)
+              iter()
+            else
+              logger.debug('processing delay queue done')
+              self.sendRequests()
           else
-            logger.debug('delay push queue done')
-            self.sendRequests()
-        else
-          logger.error('rpop push queue caught error')
-          logger.error('message: %s', err.message)
-          throw err
+            logger.error('rpop delay queue caught error')
+            logger.error('message: %s', err.message)
+            throw err
+          return
+        )
         return
-      )
+      iter()
       return
 
-    iter()
-    setInterval(iter, config.monitorInterval)
+    monitor()
+    setInterval(monitor, config.monitorInterval)
+    
+    push = ->
+      iter = ->
+        results = []
+        self.client.rpop(config.redisPushQueueKey, (err, res) ->
+          if not err
+            if res
+              results.push(JSON.parse(res))
+              iter()
+            else
+              logger.debug('processing push queue done')
+              results.map((result) ->
+                self.accessTokens.map((token) -> messenger.push(result, token)))
+          else
+            logger.error('rpop push queue caught error')
+            logger.error('message: %s', err.message)
+            throw err
+          return
+        )
+        return
+      iter()
+      return
+    setInterval(push, config.pushInterval)
     return
 
   start: ->

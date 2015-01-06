@@ -1,5 +1,6 @@
 {
   "monitorInterval": 900000,
+  "pushInterval": 2000,
   "resendDelay": 86400000,
 
   "logFileName": "ebuy_monitor.log",
@@ -11,6 +12,7 @@
   "redisRecordDBIndex": 0,
   "redisHistoryKey": "history",
   "redisPushQueueKey": "push_queue",
+  "redisDelayQueueKey": "delay_queue",
   "redisPullQueueKey": "pull_queue",
 
   "pushServiceUrl": "https://api.pushbullet.com/v2/pushes",
