@@ -30,7 +30,7 @@ cacheItemToVerdict = (item) ->
     verdict[field] = item[field]
     return
   )
-  seed.MANDATORY_VERDICT_FIELDS.map((field) ->
+  seed.AVAILABLE_VERDICT_FIELDS.map((field) ->
     if item[field]
       verdict[field] = item[field]
     return

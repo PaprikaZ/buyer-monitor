@@ -43,7 +43,7 @@ cacheItemToVerdict = function(item) {
   seed.MANDATORY_BASE_FIELDS.map(function(field) {
     verdict[field] = item[field];
   });
-  seed.MANDATORY_VERDICT_FIELDS.map(function(field) {
+  seed.AVAILABLE_VERDICT_FIELDS.map(function(field) {
     if (item[field]) {
       verdict[field] = item[field];
     }

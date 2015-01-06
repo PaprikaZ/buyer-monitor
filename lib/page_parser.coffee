@@ -3,7 +3,7 @@ cheerio = require('cheerio')
 
 _MANDATORY_PARSE_FIELDS = ['title', 'price', 'fullPrice', 'review', 'instore', 'benefits']
 MANDATORY_FIELDS = ['title', 'price', 'fullPrice', 'discount', 'review', 'instore', 'benefits']
-require('./seed.js').MANDATORY_VERDICT_FIELDS.map((field) ->
+require('./seed.js').AVAILABLE_VERDICT_FIELDS.map((field) ->
   if MANDATORY_FIELDS.indexOf(field) == -1
     console.error('seed verdict field %s is missing in page parser result', field)
     throw new Error('missing seed verdict field')

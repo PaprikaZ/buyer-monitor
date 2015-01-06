@@ -202,7 +202,7 @@ describe('argv parser', ->
             return JSON.stringify([])
           writeFileSync: (file, data) ->
             makeCalledTrue()
-            argvParser.__get__('MANDATORY_VERDICT_FIELDS').map((field) ->
+            argvParser.__get__('AVAILABLE_VERDICT_FIELDS').map((field) ->
               product = JSON.parse(data).pop()
               product.should.have.property(field)
               product[field].should.have.property('compare')

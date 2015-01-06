@@ -5,7 +5,7 @@ path = require('path')
 _seed = require('./seed.js')
 AVAILABLE_COMPARES = _seed.AVAILABLE_COMPARES
 MANDATORY_BASE_FIELDS = _seed.MANDATORY_BASE_FIELDS
-MANDATORY_VERDICT_FIELDS = _seed.MANDATORY_VERDICT_FIELDS
+AVAILABLE_VERDICT_FIELDS = _seed.AVAILABLE_VERDICT_FIELDS
 
 config = require('./config.js')
 verdictsFileName = path.join(__dirname, '../', config.verdictsFileName)
@@ -87,7 +87,7 @@ listHandler = ->
         output += util.format(', %s %s', field, verdict[field])
         return
       )
-      MANDATORY_VERDICT_FIELDS.map((field) ->
+      AVAILABLE_VERDICT_FIELDS.map((field) ->
         if verdict[field]
           if verdict[field].compare == 'equal'
             output += util.format(
@@ -171,7 +171,7 @@ addHandler = (argv) ->
       return
 
     iter(argv)
-    if MANDATORY_BASE_FIELDS.every((field) -> return record[field]) and MANDATORY_VERDICT_FIELDS.some((field) -> return record[field])
+    if MANDATORY_BASE_FIELDS.every((field) -> return record[field]) and AVAILABLE_VERDICT_FIELDS.some((field) -> return record[field])
       return record
     else
       missingArgHandler()

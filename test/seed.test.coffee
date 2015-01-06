@@ -1,7 +1,14 @@
 rewire = require('rewire')
-seed = rewire('../lib/seed.js')
 
 describe('seed', ->
+  seed = rewire('../lib/seed.js')
+  seed.__set__({
+    logger:
+      debug: ->
+      info: ->
+      error: ->
+  })
+
   testID = 'test0000'
   knownSite = 'www.amazon.cn'
   unknownSite = 'www.example.com'
@@ -12,12 +19,6 @@ describe('seed', ->
   reviewCompare = 'above'
   testReview = 8
   notAnNumber = 'null'
-  seed.__set__({
-    logger:
-      debug: ->
-      info: ->
-      error: ->
-  })
   mockErrorMsg = 'mock msg'
   Seed = seed.__get__('Seed')
 
@@ -26,53 +27,23 @@ describe('seed', ->
     makeCalledTrue = ->
       called = true
       return
-
-    beforeEach(->
+    makeCalledFalse = ->
       called = false
       return
-    )
-
-    it('should route to site not support handler when site not in support list', ->
-      product =
-        id: testID
-        site: unknownSite
-        price:
-          compare: priceCompare
-          target: testPrice
-      revert = seed.__set__({
+    restore = null
+    beforeEach(->
+      makeCalledFalse()
+      restore = seed.__set__({
         siteNotSupportHandler: ->
-          makeCalledTrue()
-          throw new Error(mockErrorMsg)
-      })
-      (->
-        return new Seed(product)
-      ).should.throw(mockErrorMsg)
-      called.should.be.true
-      revert()
-      return
-    )
-
-    it('should route to illegal type handler when detect not a number', ->
-      product =
-        id: testID
-        site: knownSite
-        discount:
-          compare: discountCompare
-          target: notAnNumber
-      revert = seed.__set__({
         illegalTypeHandler: ->
-          makeCalledTrue()
-          throw new Error(mockErrorMsg)
+        verdictMissingHandler: ->
+        noneVerdictLoadedHandler: ->
       })
-      (->
-        return new Seed(product)
-      ).should.throw(mockErrorMsg)
-      called.should.be.true
-      revert()
       return
     )
+    afterEach(-> restore())
 
-    it('should initialize its id and site attributes by copy from product', ->
+    it('should initialize its id and site fields copy from product', ->
       product =
         id: testID
         site: knownSite
@@ -85,7 +56,7 @@ describe('seed', ->
       return
     )
 
-    it('should initialize its url attribute which have http prefix', ->
+    it('should initialize its url field', ->
       product =
         id: testID
         site: knownSite
@@ -95,11 +66,10 @@ describe('seed', ->
       s = new Seed(product)
       s.should.have.property('url')
       s.url.should.be.a.String
-      s.url.should.startWith('http://')
       return
     )
 
-    it('should initialize at least one sub verdict entry', ->
+    it('should initialize at least one verdict method', ->
       product =
         id: testID
         site: knownSite
@@ -107,22 +77,40 @@ describe('seed', ->
           compare: discountCompare
           target: testDiscount
       s = new Seed(product)
-      verdictMethods = seed.__get__('_MANDATORY_VERDICT_METHODS')
-      verdictMethods.reduce(((partial, name) ->
-        return partial or (typeof(s[name]) == 'function')
-      ), false).should.be.true
+      verdictMethods = seed.__get__('_AVAILABLE_VERDICT_METHODS')
+      verdictMethods.some((method) ->
+        return (typeof(s[method]) == 'function')
+      ).should.be.true
       return
     )
 
-    it('should initialize verdict entry', ->
+    it('should route to site not support handler when site not in support list', ->
       product =
         id: testID
-        site: knownSite
+        site: unknownSite
         price:
           compare: priceCompare
           target: testPrice
+      seed.__set__({
+        siteNotSupportHandler: makeCalledTrue
+      })
       s = new Seed(product)
-      s.verdict.should.be.a.Function
+      called.should.be.true
+      return
+    )
+
+    it('should route to illegal type handler when detect not a number', ->
+      product =
+        id: testID
+        site: knownSite
+        discount:
+          compare: discountCompare
+          target: notAnNumber
+      seed.__set__({
+        illegalTypeHandler: makeCalledTrue
+      })
+      s = new Seed(product)
+      called.should.be.true
       return
     )
     return
@@ -266,12 +254,44 @@ describe('seed', ->
     return
   )
 
+  describe('equal', ->
+    it('should return true if both id and site equal', ->
+      productA =
+        id: testID
+        site: 'www.amazon.cn'
+        review:
+          compare: reviewCompare
+          target: testReview
+      productB =
+        id: 'foo'
+        site: 'www.amazon.cn'
+        review:
+          compare: reviewCompare
+          target: testReview
+      productC =
+        id: testID
+        site: 'www.amazon.com'
+        review:
+          compare: reviewCompare
+          target: testReview
+
+      sa = new Seed(productA)
+      sb = new Seed(productB)
+      sc = new Seed(productC)
+      sa.equal(sb).should.be.false
+      sa.equal(sc).should.be.false
+      sb.equal(sc).should.be.false
+      sa.equal(sa).should.be.true
+      return
+    )
+    return
+  )
+
   describe('verdict missing handler', ->
     verdictMissingHandler = seed.__get__('verdictMissingHandler')
-
-    it('should throw verdict missing error', ->
+    it('should throw error', ->
       verdictMissingHandler.bind(null, testID, knownSite)
-        .should.throw('product missing verdict field error')
+        .should.throw('value missing error, non verdict fields specified')
       return
     )
     return
@@ -279,10 +299,9 @@ describe('seed', ->
 
   describe('site not support handler', ->
     siteNotSupportHandler = seed.__get__('siteNotSupportHandler')
-
-    it('should throw site not support error', ->
+    it('should throw error', ->
       siteNotSupportHandler.bind(null, unknownSite)
-        .should.throw('product site not support error')
+        .should.throw('value not support error, verdict site')
       return
     )
     return
@@ -290,10 +309,9 @@ describe('seed', ->
 
   describe('illegal type handler', ->
     illegalTypeHandler = seed.__get__('illegalTypeHandler')
-
-    it('should throw illegal verdict value error', ->
-      illegalTypeHandler.bind(null, 'price', 'number')
-        .should.throw('product illegal verdict value error')
+    it('should throw error', ->
+      illegalTypeHandler.bind(null, testID, knownSite, 'price')
+        .should.throw('value not support error, illegal verdict value')
       return
     )
     return
@@ -301,10 +319,9 @@ describe('seed', ->
 
   describe('none verdict loaded handler', ->
     noneVerdictLoadedHandler = seed.__get__('noneVerdictLoadedHandler')
-
-    it('should throw none verdict loaded handler', ->
+    it('should throw error', ->
       noneVerdictLoadedHandler.bind(null, testID, knownSite)
-        .should.throw('none verdict loaded')
+        .should.throw('load error, none verdict fields loaded')
       return
     )
     return

@@ -185,7 +185,7 @@ describe('argv parser', function() {
           },
           writeFileSync: function(file, data) {
             makeCalledTrue();
-            argvParser.__get__('MANDATORY_VERDICT_FIELDS').map(function(field) {
+            argvParser.__get__('AVAILABLE_VERDICT_FIELDS').map(function(field) {
               var product;
               product = JSON.parse(data).pop();
               product.should.have.property(field);

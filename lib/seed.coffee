@@ -5,10 +5,9 @@ httpsPrefix = 'https://'
 htmlSuffix = '.html'
 
 MANDATORY_BASE_FIELDS = ['id', 'site']
-MANDATORY_EXPAND_FIELDS = ['url']
-MANDATORY_VERDICT_FIELDS = ['price', 'discount', 'instore', 'review', 'benefits']
+AVAILABLE_VERDICT_FIELDS = ['price', 'discount', 'instore', 'review', 'benefits']
 AVAILABLE_COMPARES = ['above', 'under', 'equal', 'match']
-_MANDATORY_VERDICT_METHODS = MANDATORY_VERDICT_FIELDS.map((field) ->
+_AVAILABLE_VERDICT_METHODS = AVAILABLE_VERDICT_FIELDS.map((field) ->
   return 'verdict' + field.slice(0, 1).toUpperCase() + field.substring(1)
 )
 
@@ -43,84 +42,97 @@ generateProductUrl = (id, site) ->
     siteNotSupportHandler(site)
   return
 
+_FIELDS_EXPAND_TABLE =
+  url: generateProductUrl
+MANDATORY_EXPAND_FIELDS = []
+for field, expand of _FIELDS_EXPAND_TABLE
+  MANDATORY_EXPAND_FIELDS.push(field)
+
 siteNotSupportHandler = (site) ->
   logger.error('site %s is not support yet', site)
-  throw new Error('product site not support error')
+  throw new Error('value not support error, verdict site')
 
 illegalTypeHandler = (id, site, field) ->
   logger.error('id %s site %s %s verdict with a illegal value', id, site, field)
-  throw new Error('product illegal verdict value error')
+  throw new Error('value not support error, illegal verdict value')
 
 verdictMissingHandler = (id, site) ->
   logger.error('id %s site %s missing verdict field', id, site)
-  throw new Error('product missing verdict field error')
+  throw new Error('value missing error, non verdict fields specified')
 
 noneVerdictLoadedHandler = (id, site) ->
   logger.error('id %s site %s none verdict loaded', id, site)
-  throw new Error('none verdict loaded')
+  throw new Error('load error, none verdict fields loaded')
 
 class Seed
-  constructor: (product) ->
+  constructor: (verdict) ->
     self = @
-    MANDATORY_BASE_FIELDS.map((field) -> self[field] = product[field])
-    @url = generateProductUrl(product.id, product.site)
+    MANDATORY_BASE_FIELDS.map((field) -> self[field] = verdict[field])
+    for field, expand of _FIELDS_EXPAND_TABLE
+      @[field] = expand.apply(
+        null, MANDATORY_BASE_FIELDS.map((field) -> verdict[field]))
 
     (->
       verdictLoaded = false
-      MANDATORY_VERDICT_FIELDS.map((field) ->
-        if product[field]
-          if product[field].target != 'null'
-            self[field] = product[field]
+      AVAILABLE_VERDICT_FIELDS.map((field) ->
+        if verdict[field]
+          if verdict[field].target != 'null'
+            self[field] = verdict[field]
             verdictLoaded = true
           else
-            illegalTypeHandler(product.id, product.site, field)
+            illegalTypeHandler(verdict.id, verdict.site, field)
         return
       )
-      not verdictLoaded and verdictMissingHandler(product.id, product.site)
+      not verdictLoaded and verdictMissingHandler(verdict.id, verdict.site)
       return
     )()
 
-    if product.price
+    if verdict.price
       @verdictPrice = (x) ->
-        return x.price < product.price.target
+        return x.price < verdict.price.target
 
-    if product.discount
+    if verdict.discount
       @verdictDiscount = (x) ->
-        return product.discount.target < x.discount
+        return verdict.discount.target < x.discount
 
-    if product.review
+    if verdict.review
       @verdictReview = (x) ->
-        return product.review.target < x.review
+        return verdict.review.target < x.review
 
-    if product.instore
+    if verdict.instore
       @verdictInstore = (x) ->
-        return x.instore == product.instore
+        return x.instore == verdict.instore
 
-    if product.benefits
-      regex = new RegExp(product.benefits.regex, product.benefits.option)
+    if verdict.benefits
+      regex = new RegExp(verdict.benefits.regex, verdict.benefits.option)
       @verdictBenefits = (x) ->
         return x.benefits.some((elt) -> return regex.test(elt))
 
-    if _MANDATORY_VERDICT_METHODS.filter((verdict) -> self[verdict]).length == 0
-      noneVerdictLoadedHandler(product.id, product.site)
+    _AVAILABLE_VERDICT_METHODS.some((verdict) -> self[verdict]) or
+      noneVerdictLoadedHandler(verdict.id, verdict.site)
 
     return
 
   verdict: (result) ->
     self = @
-    ret = _MANDATORY_VERDICT_METHODS
-      .filter((verdict) ->
-        return self[verdict]
+    return _AVAILABLE_VERDICT_METHODS
+      .filter((method) ->
+        return self[method]
       )
-      .reduce(((partial, verdict) ->
-        return partial and self[verdict](result)
-      ), true)
-    return ret
+      .every((method) ->
+        return self[method](result)
+      )
+
+  equal: (seed) ->
+    self = @
+    return MANDATORY_BASE_FIELDS.every((field) ->
+      return self[field] == seed[field]
+    )
 
 exports.Seed = Seed
 exports.generateProductUrl = generateProductUrl
 exports.MANDATORY_BASE_FIELDS = MANDATORY_BASE_FIELDS
 exports.MANDATORY_EXPAND_FIELDS = MANDATORY_EXPAND_FIELDS
-exports.MANDATORY_VERDICT_FIELDS = MANDATORY_VERDICT_FIELDS
+exports.AVAILABLE_VERDICT_FIELDS = AVAILABLE_VERDICT_FIELDS
 exports.AVAILABLE_COMPARES = AVAILABLE_COMPARES
 module.exports = exports
