@@ -5,7 +5,7 @@ httpsPrefix = 'https://'
 htmlSuffix = '.html'
 
 MANDATORY_BASE_FIELDS = ['id', 'site']
-MANDATORY_EXPAND_FIELDS = ['id', 'site', 'url']
+MANDATORY_EXPAND_FIELDS = ['url']
 MANDATORY_VERDICT_FIELDS = ['price', 'discount', 'instore', 'review', 'benefits']
 AVAILABLE_COMPARES = ['above', 'under', 'equal', 'match']
 _MANDATORY_VERDICT_METHODS = MANDATORY_VERDICT_FIELDS.map((field) ->
@@ -35,7 +35,7 @@ siteTable =
              productId + htmlSuffix
   }
 
-generateProductUrl = (site, id) ->
+generateProductUrl = (id, site) ->
   matchedItems = (self for _, self of siteTable when self.site == site)
   if 0 < matchedItems.length
     return matchedItems.pop().generateProductUrl(id)
@@ -44,7 +44,7 @@ generateProductUrl = (site, id) ->
   return
 
 siteNotSupportHandler = (site) ->
-  logger.error('site %s is not support yet')
+  logger.error('site %s is not support yet', site)
   throw new Error('product site not support error')
 
 illegalTypeHandler = (id, site, field) ->
@@ -63,7 +63,7 @@ class Seed
   constructor: (product) ->
     self = @
     MANDATORY_BASE_FIELDS.map((field) -> self[field] = product[field])
-    @url = generateProductUrl(product.site, product.id)
+    @url = generateProductUrl(product.id, product.site)
 
     (->
       verdictLoaded = false
@@ -117,8 +117,10 @@ class Seed
       ), true)
     return ret
 
-module.exports.Seed = Seed
-module.exports.MANDATORY_BASE_FIELDS = MANDATORY_BASE_FIELDS
-module.exports.MANDATORY_EXPAND_FIELDS = MANDATORY_EXPAND_FIELDS
-module.exports.MANDATORY_VERDICT_FIELDS = MANDATORY_VERDICT_FIELDS
-module.exports.AVAILABLE_COMPARES = AVAILABLE_COMPARES
+exports.Seed = Seed
+exports.generateProductUrl = generateProductUrl
+exports.MANDATORY_BASE_FIELDS = MANDATORY_BASE_FIELDS
+exports.MANDATORY_EXPAND_FIELDS = MANDATORY_EXPAND_FIELDS
+exports.MANDATORY_VERDICT_FIELDS = MANDATORY_VERDICT_FIELDS
+exports.AVAILABLE_COMPARES = AVAILABLE_COMPARES
+module.exports = exports

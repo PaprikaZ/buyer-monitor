@@ -69,10 +69,12 @@ class Visitor
   parsePage: (html) ->
     self = @
     result = {}
-    MANDATORY_EXPAND_FIELDS.map((field) ->
+
+    mountField = (field) ->
       result[field] = self.seed[field]
       return
-    )
+    MANDATORY_BASE_FIELDS.map(mountField)
+    MANDATORY_EXPAND_FIELDS.map(mountField)
 
     for attr, val of createParser(@seed.site).parse(html)
       result[attr] = val
