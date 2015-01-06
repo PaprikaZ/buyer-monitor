@@ -3,13 +3,12 @@ fs = require('fs')
 path = require('path')
 rewire = require('rewire')
 Seed = require('../lib/seed.js').Seed
-verdict = JSON.parse(fs.readFileSync(
-  path.join(__dirname, './cache/verdict.json')))
-pickOneVerdict = ->
+verdicts = require('./cache/builder.js').generateVerdicts()
+pickVerdict = ->
   min = 0
-  max = verdict.length - 1
+  max = verdicts.length - 1
   idx = Math.floor(Math.random() * (max - min + 1) + min)
-  return verdict[idx]
+  return verdicts[idx]
 urlToHtmlTable = require('./cache/html.json')
 visitor = rewire('../lib/visitor.js')
 

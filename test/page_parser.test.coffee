@@ -3,7 +3,6 @@ path = require('path')
 fs = require('fs')
 rewire = require('rewire')
 pageParser = rewire('../lib/page_parser.js')
-cacheDir = './cache'
 urlToHtmlTable = require('./cache/html.json')
 
 describe('page parser', ->
@@ -63,7 +62,7 @@ describe('page parser', ->
       table = {}
       for url, file of urlToHtmlTable
         if siteRegExp.test(url)
-          table[url] = path.join(cacheDir, file)
+          table[url] = file
 
       if 0 < Object.getOwnPropertyNames(table).length
         defaultParser = new Parser()
@@ -72,7 +71,7 @@ describe('page parser', ->
         for url, file of table
           behavior = util.format('should parse %s as expect', url)
           it(behavior, ->
-            html = fs.readFileSync(path.join(__dirname, file))
+            html = fs.readFileSync(file)
             result = siteParser.parse(html)
 
             MANDATORY_FIELDS.map((field) ->

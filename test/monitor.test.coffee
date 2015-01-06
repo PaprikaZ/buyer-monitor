@@ -1,8 +1,8 @@
 fs = require('fs')
 config = require('../lib/config.js')
 rewire = require('rewire')
+verdicts = require('./cache/builder.js').generateVerdicts()
 monitor = rewire('../lib/monitor.js')
-unparsedVerdicts = fs.readFileSync('./test/cache/verdict.json')
 
 describe('monitor module', ->
   config.accounts = [
@@ -19,7 +19,7 @@ describe('monitor module', ->
     config: config
     fs:
       readFileSync: ->
-        return unparsedVerdicts
+        return JSON.stringify(verdicts)
     db:
       getClient: -> {rpop: ->}
   })
@@ -132,7 +132,7 @@ describe('monitor module', ->
     )
 
     it('should call send requests when push queue clearing done', ->
-      v = JSON.parse(unparsedVerdicts).pop()
+      v = verdicts.slice().pop()
       queue = [JSON.stringify({id: v.id, site: v.site})]
       revert = monitor.__set__({
         db:
@@ -163,7 +163,7 @@ describe('monitor module', ->
     )
 
     it('should do nothing when all seeds is delayed', ->
-      queue = JSON.parse(unparsedVerdicts)
+      queue = verdicts
         .map((v) -> {id: v.id, site: v.site})
         .map((v) -> JSON.stringify(v))
       called = false
@@ -183,9 +183,9 @@ describe('monitor module', ->
 
     it('should push back delayed seeds when timeout', ->
       called = false
-      v = JSON.parse(unparsedVerdicts).pop()
+      v = verdicts.slice().pop()
       queue = [JSON.stringify({id: v.id, site: v.site})]
-      seeds = JSON.parse(unparsedVerdicts)
+      seeds = verdicts.slice()
       remainingSeeds = seeds.slice(0, seeds.length - 1)
       m = null
       revert = monitor.__set__({
