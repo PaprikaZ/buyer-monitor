@@ -1,89 +1,103 @@
 util = require('util')
 fs = require('fs')
 path = require('path')
-seed = require('./seed.js')
-AVAILABLE_COMPARES = seed.AVAILABLE_COMPARES
-MANDATORY_BASE_FIELDS = seed.MANDATORY_BASE_FIELDS
-MANDATORY_VERDICT_FIELDS = seed.MANDATORY_VERDICT_FIELDS
+
+_seed = require('./seed.js')
+AVAILABLE_COMPARES = _seed.AVAILABLE_COMPARES
+MANDATORY_BASE_FIELDS = _seed.MANDATORY_BASE_FIELDS
+MANDATORY_VERDICT_FIELDS = _seed.MANDATORY_VERDICT_FIELDS
+
 config = require('./config.js')
-productFile = path.join('./', config.productFileName)
+verdictsFileName = path.join(__dirname, '../', config.verdictsFileName)
 
 unknownArgvHandler = ->
-  throw new Error('Unknown arguments, please see help with "node app.js help"')
+  console.error('unknown arguments, please see help with "node app.js help"')
+  throw new Error('input error, unknown arguments')
+  return
 
-lackArgHandler = ->
-  throw new Error('Lack of arguments, please see help with "node app.js help"')
+missingArgHandler = ->
+  console.error('missing arguments, please see help with "node app.js help"')
+  throw new Error('input error, missing arguments')
+  return
+
+verdictNotFoundHandler = (id, site) ->
+  console.error('verdict id %s site %s not found', id, site)
+  console.error('please check with "node app.js list"')
+  throw new Error('input error, verdict not founded')
+  return
+
+invalidResponseHandler = (res) ->
+  console.error('invalid response %s', res)
+  throw new Error('input error, invalid response')
+  return
 
 helpHandler = ->
   console.log('Usage:')
   console.log('  node app.js')
   console.log('    list')
-  console.log('    add id <product-id> site <www.example.com> price under <target>')
-  console.log('    remove id <product-id>')
+  console.log('    add id <id> site <site> [<verdict> <compare> <target>] ...')
+  console.log('    remove id <id> site <site>')
   console.log('    reset')
   console.log('    help')
   console.log('')
-  console.log('The most commonly used example:')
-  console.log('')
-  console.log('  List all existing products')
+  console.log('  list all existing verdict records')
   console.log('  > node app.js list')
-  console.log('  Also you can specify the id or site as to filter result')
-  console.log('  > node app.js list site www.amazon.cn')
-  console.log('  > node app.js list id B00JG8GOWU ')
   console.log('')
-  console.log('  Add product id B00JG8GOWU on site www.amazon.com')
-  console.log('  > node app.js add id B00JG8GOWU site www.amazon.com <require>')
-  console.log('    About the requirement, some operation is given')
-  console.log('    Those price under 12 (according local) will be noticed')
+  console.log('  add product id B00JG8GOWU site www.example.com with price verdict')
+  console.log('  > node app.js add id B00JG8GOWU site www.example.com <verdict ...>')
+  console.log('    once price under 12 will be pushed')
   console.log('    > price under 12')
   console.log('')
-  console.log('    Those discount above 20% will be noticed')
-  console.log('    > price discount above 0.8')
+  console.log('    once discount above 20% will be pushed')
   console.log('    > price discount above 20')
   console.log('')
-  console.log('    And user review based on five star convention')
-  console.log('    > review above four star')
-  console.log('    > review above four-half star')
+  console.log('    once review above 8 will be pushed')
+  console.log('    > review above 8')
   console.log('')
-  console.log('    Also benefits match available, support regex')
-  console.log('    > benefits /buy two with one off/')
+  console.log('    once instored will be pushed')
+  console.log('    > instore yes')
   console.log('')
-  console.log('  Remove product id B00JG8GOWU')
+  console.log('    once benefits match regexp will be pushed')
+  console.log('    > benefits /buy two with one off/i')
+  console.log('')
+  console.log('    available verdicts:')
+  console.log('    price, discount, review, instore, benefits')
+  console.log('    available compare:')
+  console.log('    under, above')
+  console.log('')
+  console.log('  remove product id B00JG8GOWU on site www.example.com')
   console.log('  > node app.js remove id B00JG8GOWU site www.amazon.com')
-  console.log('  Since duplicated is merely happen, you ignore site option')
-  console.log('  > node app.js remove id B00JG8GOWU')
   console.log('')
-  console.log('  Reset all added products')
+  console.log('  reset all verdict records')
   console.log('  > node app.js reset')
   console.log('')
-  console.log('  See this help page')
+  console.log('  to see help page')
   console.log('  > node app.js help')
   console.log('')
-  console.log('The monitor products located in product.json at root path.')
-  process.exit()
+  console.log('The verdicts records located in verdicts.json at application root.')
   return
 
 listHandler = ->
-  console.log('Products monitored:')
-  products = JSON.parse(fs.readFileSync(productFile))
-  if 0 < products.length
-    products.forEach((product) ->
+  console.log('Products verdicted:')
+  verdicts = JSON.parse(fs.readFileSync(verdictsFileName))
+  if 0 < verdicts.length
+    verdicts.forEach((verdict) ->
       output = ''
       MANDATORY_BASE_FIELDS.map((field) ->
-        output += util.format(', %s %s', field, product[field])
+        output += util.format(', %s %s', field, verdict[field])
         return
       )
       MANDATORY_VERDICT_FIELDS.map((field) ->
-        if product[field]
-          if product[field].compare == 'equal'
+        if verdict[field]
+          if verdict[field].compare == 'equal'
             output += util.format(
-              ', %s? %s', field, product[field].target)
-          else if field == 'benefits' and product[field].compare == 'match'
+              ', %s? %s', field, verdict[field].target)
+          else if field == 'benefits' and verdict[field].compare == 'match'
             output += util.format(
-              ', benefits match \/%s\/%s', product[field].regex, product[field].option)
+              ', benefits match \/%s\/%s', verdict[field].target.regex, verdict[field].target.option)
           else
             output += util.format(
-              ', %s %s %s', field, product[field].compare, product[field].target)
+              ', %s %s %s', field, verdict[field].compare, verdict[field].target)
         return
       )
       output = output.slice(2)
@@ -93,7 +107,6 @@ listHandler = ->
   else
     console.log('empty')
   console.log('\nlist done.')
-  process.exit()
   return
 
 addHandler = (argv) ->
@@ -109,24 +122,24 @@ addHandler = (argv) ->
         else
           unknownArgvHandler()
       else
-        lackArgHandler()
+        missingArgHandler()
       return
 
     iter = (remaining) ->
       if remaining.length == 0
-        return record
+        return
       else if remaining[0] == 'id'
         if 1 < remaining.length
           record.id = remaining[1]
           iter(remaining.slice(2))
         else
-          lackArgHandler()
+          missingArgHandler()
       else if remaining[0] == 'site'
         if 1 < remaining.length
           record.site = remaining[1]
           iter(remaining.slice(2))
         else
-          lackArgHandler()
+          missingArgHandler()
       else if remaining[0] == 'price'
         record.price = keywordIter(remaining.slice(1, 3), parseInt)
         iter(remaining.slice(3))
@@ -161,24 +174,23 @@ addHandler = (argv) ->
     if MANDATORY_BASE_FIELDS.every((field) -> return record[field]) and MANDATORY_VERDICT_FIELDS.some((field) -> return record[field])
       return record
     else
-      lackArgHandler()
+      missingArgHandler()
     return
 
   writeRecord = (record) ->
-    products = JSON.parse(fs.readFileSync(productFile))
-    filteredProducts = products.filter((elt, index, arr) ->
+    verdicts = JSON.parse(fs.readFileSync(verdictsFileName))
+    filteredVerdicts = verdicts.filter((elt) ->
       return elt.id != record.id or elt.site != record.site
     )
-    filteredProducts.push(record)
-    fs.writeFileSync(productFile, JSON.stringify(filteredProducts))
-    if filteredProducts.length == products.length
+    filteredVerdicts.push(record)
+    fs.writeFileSync(verdictsFileName, JSON.stringify(filteredVerdicts))
+    if filteredVerdicts.length == verdicts.length
       console.log('id %s, site %s update done.', record.id, record.site)
     else
       console.log('add done.')
     return
 
   writeRecord(analyze())
-  process.exit()
   return
 
 removeHandler = (argv) ->
@@ -192,33 +204,24 @@ removeHandler = (argv) ->
       else if 1 < remaining.length and remaining[0] == 'site'
         site = remaining[1]
       else if remaining.length < 2
-        lackArgHandler()
+        missingArgHandler()
       else
         unknownArgvHandler()
       return iter(remaining.slice(2))
     return iter(argv)
   [id, site] = analyze()
-  if id != false
-    products = JSON.parse(fs.readFileSync(productFile))
-    filteredProducts = products.filter((elt, index, arr) ->
-      if site
-        return elt.id != id or elt.site != site
-      else
-        return elt.id != id
+  if id and site
+    verdicts = JSON.parse(fs.readFileSync(verdictsFileName))
+    filteredVerdicts = verdicts.filter((elt) ->
+      return elt.id != id or elt.site != site
     )
-    if filteredProducts.length < products.length
-      fs.writeFileSync(productFile, JSON.stringify(filteredProducts))
+    if filteredVerdicts.length < verdicts.length
+      fs.writeFileSync(verdictsFileName, JSON.stringify(filteredVerdicts))
       console.log('remove done.')
-      process.exit()
     else
-      if site
-        msg = util.format('id %s site %s not founded!', id, site)
-        throw new Error(msg)
-      else
-        msg = util.format('id %s not founded!', id)
-        throw new Error(msg)
+      verdictNotFoundHandler(id, site)
   else
-    lackArgHandler()
+    missingArgHandler()
   return
 
 resetHandler = ->
@@ -227,12 +230,12 @@ resetHandler = ->
   process.stdin.once('data', (input) ->
     input = input.trim().toLowerCase()
     if input == 'y' or input == 'yes'
-      fs.writeFileSync(productFile, JSON.stringify([]))
+      fs.writeFileSync(verdictsFileName, JSON.stringify([]))
     else if input == 'n' or input == 'no'
-      console.log('Reset aborted by user')
+      console.log('reset aborted by user')
     else
-      throw new Error('Invalid response, quit')
-    return process.exit()
+      invalidResponseHandler(input)
+    return
   )
   return
 

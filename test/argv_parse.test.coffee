@@ -1,9 +1,18 @@
 rewire = require('rewire')
 
 describe('argv parser', ->
+  argvParser = rewire('../lib/argv_parser.js')
+  argvParser.__set__({
+    console:
+      log: ->
+      info: ->
+      warn: ->
+      error: ->
+  })
+
   describe('parse', ->
-    argvParser = rewire('../lib/argv_parser.js')
     parse = argvParser.parse
+
     called = false
     makeCalledTrue = ->
       called = true
@@ -11,226 +20,110 @@ describe('argv parser', ->
     makeCalledFalse = ->
       called = false
       return
-    mockErrorMsg = 'mock error'
-    throwMockError = ->
-      throw new Error(mockErrorMsg)
+    restore = null
     beforeEach(->
-      called = false
-      argvParser.__set__({
-        addHandler: makeCalledFalse
-        removeHandler: makeCalledFalse
-        listHandler: makeCalledFalse
-        resetHandler: makeCalledFalse
-        helpHandler: makeCalledFalse
+      makeCalledFalse()
+      restore = argvParser.__set__({
+        addHandler: ->
+        removeHandler: ->
+        listHandler: ->
+        resetHandler: ->
+        helpHandler: ->
         unknownArgvHandler: ->
-          makeCalledTrue()
-          throwMockError()
-          return
+        missingArgHandler: ->
       })
       return
     )
+    afterEach(-> restore())
 
-    it('should route to launch when no further arguments', ->
+    it('should call callback when no command given', ->
       parse([], makeCalledTrue)
       called.should.be.true
       return
     )
 
-    it('should route to add handler when add followed arguments', ->
+    it('should route to add handler when add arguments given', ->
       argvParser.__set__('addHandler', makeCalledTrue)
       parse(['add', 'foo'], ->)
       called.should.be.true
       return
     )
 
-    it('should route to unknown handler when only add given', ->
-      parse.bind(null, ['add'], ->).should.throw(mockErrorMsg)
+    it('should route to unknown argv handler when single add given', ->
+      argvParser.__set__('unknownArgvHandler', makeCalledTrue)
+      parse(['add'], ->)
       called.should.be.true
       return
     )
 
-    it('should route to remove handler when remove followed arguments', ->
+    it('should route to remove handler when remove arguments given', ->
       argvParser.__set__('removeHandler', makeCalledTrue)
       parse(['remove', 'foo'], ->)
       called.should.be.true
       return
     )
 
-    it('should route to unknown handler when only remove given', ->
-      parse.bind(null, ['remove'], ->).should.throw(mockErrorMsg)
+    it('should route to unknown argv handler when single remove given', ->
+      argvParser.__set__('unknownArgvHandler', makeCalledTrue)
+      parse(['remove'], ->)
       called.should.be.true
       return
     )
 
-    it('should route to list handler when only list given', ->
+    it('should route to list handler when single list given', ->
       argvParser.__set__('listHandler', makeCalledTrue)
       parse(['list'], ->)
       called.should.be.true
       return
     )
 
-    it('should route to unknown handler when list followed arguments', ->
-      parse.bind(null, ['list', 'foo'], ->).should.throw(mockErrorMsg)
+    it('should route to unknown argv handler when list followed by arguments', ->
+      argvParser.__set__('unknownArgvHandler', makeCalledTrue)
+      parse(['list', 'foo'], ->)
       called.should.be.true
       return
     )
 
-    it('should route to reset handler when only reset given', ->
+    it('should route to reset handler when single reset given', ->
       argvParser.__set__('resetHandler', makeCalledTrue)
       parse(['reset'], ->)
       called.should.be.true
       return
     )
 
-    it('should route to unknown handler when reset followed arguments', ->
-      parse.bind(null, ['reset', 'foo'], ->).should.throw(mockErrorMsg)
+    it('should route to unknown argv handler when reset followed by arguments', ->
+      argvParser.__set__('unknownArgvHandler', makeCalledTrue)
+      parse(['reset', 'foo'], ->)
       called.should.be.true
       return
     )
 
-    it('should route to help handler when only help given', ->
+    it('should route to help handler when single help given', ->
       argvParser.__set__('helpHandler', makeCalledTrue)
       parse(['help'], ->)
       called.should.be.true
       return
     )
 
-    it('should route to unknown handler when help followed arguments', ->
-      parse.bind(null, ['help', 'foo'], ->).should.throw(mockErrorMsg)
+    it('should route to unknown argv handler when help followed by arguments', ->
+      argvParser.__set__('unknownArgvHandler', makeCalledTrue)
+      parse(['help', 'foo'], ->)
       called.should.be.true
       return
     )
 
-    it('should route to unknown handler when unknown arguments given', ->
-      parse.bind(null, ['foo'], ->).should.throw(mockErrorMsg)
+    it('should route to unknown argv handler when arguments unknown', ->
+      argvParser.__set__('unknownArgvHandler', makeCalledTrue)
+      parse(['foo'], ->)
       called.should.be.true
-      return
-    )
-    return
-  )
-
-  describe('help handler', ->
-    argvParser = rewire('../lib/argv_parser.js')
-    helpHandler = argvParser.__get__('helpHandler')
-    called = false
-    makeCalledTrue = ->
-      called = true
-      return
-    beforeEach(->
-      called = false
-      argvParser.__set__({
-        console:
-          log: ->
-        process:
-          exit: ->
-      })
-      return
-    )
-
-    it('should end with process exit', ->
-      revert = argvParser.__set__({
-        process:
-          exit: makeCalledTrue
-      })
-      helpHandler()
-      called.should.be.true
-      revert()
-      return
-    )
-    return
-  )
-
-  describe('unknown argv handler', ->
-    argvParser = rewire('../lib/argv_parser.js')
-    unknownArgvHandler = argvParser.__get__('unknownArgvHandler')
-    called = false
-    makeCalledTrue = ->
-      called = true
-      return
-    beforeEach(->
-      called = false
-      argvParser.__set__({
-        console:
-          log: ->
-      })
-      return
-    )
-
-    it('should throw unknown arguments error', ->
-      unknownArgvHandler.should.throw(/^Unknown arguments/)
-      return
-    )
-    return
-  )
-
-  describe('lack arg handler', ->
-    argvParser = rewire('../lib/argv_parser.js')
-    lackArgHandler = argvParser.__get__('lackArgHandler')
-    called = false
-    makeCalledTrue = ->
-      called = true
-      return
-    beforeEach(->
-      called = false
-      argvParser.__set__({
-        console:
-          log: ->
-      })
-      return
-    )
-
-    it('should throw lack of arguments error', ->
-      lackArgHandler.should.throw(/^Lack of arguments/)
-      return
-    )
-    return
-  )
-
-  describe('list handler', ->
-    argvParser = rewire('../lib/argv_parser.js')
-    listHandler = argvParser.__get__('listHandler')
-    called = false
-    makeCalledTrue = ->
-      called = true
-      return
-    beforeEach(->
-      called = false
-      argvParser.__set__({
-        console:
-          log: ->
-        process:
-          exit: ->
-        fs:
-          readFileSync: ->
-            return JSON.stringify([])
-      })
-      return
-    )
-
-    it('should end with process exit', ->
-      revert = argvParser.__set__({
-        process:
-          exit: makeCalledTrue
-      })
-      listHandler()
-      called.should.be.true
-      revert()
       return
     )
     return
   )
 
   describe('add handler', ->
-    argvParser = rewire('../lib/argv_parser.js')
     addHandler = argvParser.__get__('addHandler')
-    called = false
-    makeCalledTrue = ->
-      called = true
-      return
-    mockErrorMsg = 'mock error'
-    throwMockError = ->
-      throw new Error(mockErrorMsg)
-    fullVerdictProduct =
+    fullVerdict =
       id: 'test0000'
       site: 'www.example.com'
       price:
@@ -250,145 +143,65 @@ describe('argv parser', ->
         target:
           regex: '20% off'
           option: 'i'
-    defaultProduct =
+    simpleVerdict =
       id: 'test0000'
       site: 'www.example.com'
       price:
         compare: 'under'
         target: 100
-    newProduct =
-      id: 'test0000'
-      site: 'www.example.com'
-      price:
-        compare: 'under'
-        target: 110
-    beforeEach(->
+
+    called = false
+    makeCalledTrue = ->
+      called = true
+      return
+    makeCalledFalse = ->
       called = false
-      argvParser.__set__({
-        console:
-          log: ->
-        process:
-          exit: ->
+      return
+    restore = null
+    beforeEach(->
+      makeCalledFalse()
+      restore = argvParser.__set__({
         fs:
-          writeFileSync: ->
           readFileSync: ->
             return JSON.stringify([])
-      })
-      return
-    )
-
-    it('should end with process exit when id, site, and verdict given', ->
-      argvParser.__set__({
-        process:
-          exit: makeCalledTrue
-      })
-      addHandler(['id', 'test0001', 'site', 'www.example.com', 'price', 'under', '0'])
-      called.should.be.true
-      return
-    )
-
-    it('should route to lack arg handler when id not given', ->
-      revert = argvParser.__set__({
-        lackArgHandler: ->
-          makeCalledTrue()
-          throwMockError()
-          return
-      })
-      addHandler.bind(null, ['site', 'www.example.com', 'price', 'under', '0'])
-        .should.throw(mockErrorMsg)
-      called.should.be.true
-      revert()
-      return
-    )
-
-    it('should route to lack arg handler when site not given', ->
-      revert = argvParser.__set__({
-        lackArgHandler: ->
-          makeCalledTrue()
-          throwMockError()
-          return
-      })
-      addHandler.bind(null, ['id', 'test0000', 'price', 'under', '0'])
-        .should.throw(mockErrorMsg)
-      called.should.be.true
-      revert()
-      return
-    )
-
-    it('should route to lack arg handler when verdict not given', ->
-      revert = argvParser.__set__({
-        lackArgHandler: ->
-          makeCalledTrue()
-          throwMockError()
-          return
-      })
-      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com'])
-        .should.throw(mockErrorMsg)
-      called.should.be.true
-      revert()
-      return
-    )
-
-    it('should route to lack arg handler when keyword field not given', ->
-      revert = argvParser.__set__({
-        lackArgHandler: ->
-          makeCalledTrue()
-          throwMockError()
-          return
-      })
-      addHandler.bind(null, ['id']).should.throw(mockErrorMsg)
-      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price'])
-        .should.throw(mockErrorMsg)
-      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'price', 'under'])
-        .should.throw(mockErrorMsg)
-      addHandler.bind(null, ['id', 'test0000', 'site', 'www.example.com', 'benefits'])
-        .should.throw(mockErrorMsg)
-      called.should.be.true
-      revert()
-      return
-    )
-
-    it('should route to unknown argv handler when meet unknown argument', ->
-      revert = argvParser.__set__({
+          writeFileSync: ->
+        missingArgHandler: ->
         unknownArgvHandler: ->
-          makeCalledTrue()
-          throwMockError()
-          return
       })
-      addHandler.bind(null, 'id', 'test0000', 'site', 'www.example.com', 'foo')
-        .should.throw(mockErrorMsg)
-      called.should.be.true
-      revert()
       return
     )
+    afterEach(-> restore())
 
-    it('should write new record when no duplicated record founded', ->
+    it('should write new verdict when no duplication', ->
       argvParser.__set__({
         fs:
           readFileSync: ->
             return JSON.stringify([])
           writeFileSync: (file, data) ->
-            data.should.equal(JSON.stringify([fullVerdictProduct]))
+            makeCalledTrue()
+            data.should.equal(JSON.stringify([fullVerdict]))
             return
       })
       addHandler([
-        'id', fullVerdictProduct.id,
-        'site', fullVerdictProduct.site,
-        'price', fullVerdictProduct.price.compare, fullVerdictProduct.price.target.toString(),
-        'discount', fullVerdictProduct.discount.compare, fullVerdictProduct.discount.target.toString(),
-        'review', fullVerdictProduct.review.compare, fullVerdictProduct.review.target.toString(),
+        'id', fullVerdict.id,
+        'site', fullVerdict.site,
+        'price', fullVerdict.price.compare, fullVerdict.price.target.toString(),
+        'discount', fullVerdict.discount.compare, fullVerdict.discount.target.toString(),
+        'review', fullVerdict.review.compare, fullVerdict.review.target.toString(),
         'instore', 'yes',
         'benefits', '/20% off/i'
       ])
+      called.should.be.true
       return
     )
 
-    it('should write new record which have unified verdict data', ->
+    it('should make new verdict with unified verdict fields format', ->
       argvParser.__set__({
         fs:
           readFileSync: ->
             return JSON.stringify([])
           writeFileSync: (file, data) ->
+            makeCalledTrue()
             argvParser.__get__('MANDATORY_VERDICT_FIELDS').map((field) ->
               product = JSON.parse(data).pop()
               product.should.have.property(field)
@@ -399,316 +212,437 @@ describe('argv parser', ->
             return
       })
       addHandler([
-        'id', fullVerdictProduct.id,
-        'site', fullVerdictProduct.site,
-        'price', fullVerdictProduct.price.compare, fullVerdictProduct.price.target.toString(),
-        'discount', fullVerdictProduct.discount.compare, fullVerdictProduct.discount.target.toString(),
-        'review', fullVerdictProduct.review.compare, fullVerdictProduct.review.target.toString(),
+        'id', fullVerdict.id,
+        'site', fullVerdict.site,
+        'price', fullVerdict.price.compare, fullVerdict.price.target.toString(),
+        'discount', fullVerdict.discount.compare, fullVerdict.discount.target.toString(),
+        'review', fullVerdict.review.compare, fullVerdict.review.target.toString(),
         'instore', 'yes',
         'benefits', '/20% off/i'
       ])
+      called.should.be.true
       return
     )
 
-    it('should overwrite record when id, site matched', ->
+    it('should overwrite verdict when both id and site matched', ->
       argvParser.__set__({
         fs:
           readFileSync: ->
-            return JSON.stringify([defaultProduct])
+            return JSON.stringify([simpleVerdict])
           writeFileSync: (file, data) ->
-            data.should.equal(JSON.stringify([newProduct]))
+            makeCalledTrue()
+            data.should.equal(JSON.stringify([fullVerdict]))
             return
       })
       addHandler([
-        'id', defaultProduct.id,
-        'site', defaultProduct.site,
-        'price', defaultProduct.price.compare, newProduct.price.target.toString()
+        'id', fullVerdict.id,
+        'site', fullVerdict.site,
+        'price', fullVerdict.price.compare, fullVerdict.price.target.toString(),
+        'discount', fullVerdict.discount.compare, fullVerdict.discount.target.toString(),
+        'review', fullVerdict.review.compare, fullVerdict.review.target.toString(),
+        'instore', 'yes',
+        'benefits', '/20% off/i'
       ])
+      called.should.be.true
       return
     )
 
-    it('should overwrite record when only id given and matched', ->
+    it('should make result no depence on from keywords sequence', ->
+      writeData = writeDataA = writeDataB = null
       argvParser.__set__({
         fs:
           readFileSync: ->
-            return JSON.stringify([defaultProduct])
+            return JSON.stringify([])
           writeFileSync: (file, data) ->
-            data.should.equal(JSON.stringify([newProduct]))
+            makeCalledTrue()
+            writeData = JSON.parse(data)
             return
       })
       addHandler([
-        'id', defaultProduct.id,
-        'site', defaultProduct.site,
-        'price', defaultProduct.price.compare, newProduct.price.target.toString()
+        'id', simpleVerdict.id,
+        'site', simpleVerdict.site,
+        'price', simpleVerdict.price.compare, simpleVerdict.price.target
       ])
+      writeDataA = writeData
+      addHandler([
+        'site', simpleVerdict.site,
+        'price', simpleVerdict.price.compare, simpleVerdict.price.target
+        'id', simpleVerdict.id,
+      ])
+      writeDataB = writeData
+
+      writeDataA.should.eql(writeDataB)
+      called.should.be.true
+      return
+    )
+
+    it('should route to missing arg handler when id not given', ->
+      argvParser.__set__('missingArgHandler', makeCalledTrue)
+      addHandler([
+        'site', simpleVerdict,
+        'price', simpleVerdict.price.compare, simpleVerdict.price.target
+      ])
+      called.should.be.true
+      return
+    )
+
+    it('should route to missing arg handler when site not given', ->
+      argvParser.__set__('missingArgHandler', makeCalledTrue)
+      addHandler([
+        'id', simpleVerdict.id,
+        'price', simpleVerdict.price.compare, simpleVerdict.price.target])
+      called.should.be.true
+      return
+    )
+
+    it('should route to missing arg handler when non verdicts given', ->
+      argvParser.__set__('missingArgHandler', makeCalledTrue)
+      addHandler([
+        'id', simpleVerdict.id,
+        'site', simpleVerdict.site])
+      called.should.be.true
+      return
+    )
+
+    it('should route to missing arg handler when verdict field not given', ->
+      argvParser.__set__('missingArgHandler', makeCalledTrue)
+      addHandler(['id'])
+      called.should.be.true
+      makeCalledFalse()
+      addHandler([
+        'id', simpleVerdict.id,
+        'site', simpleVerdict.site,
+        'price'])
+      called.should.be.true
+      makeCalledFalse()
+      addHandler([
+        'id', simpleVerdict.id,
+        'site', simpleVerdict.site,
+        'price', simpleVerdict.price.compare])
+      called.should.be.true
+      makeCalledFalse()
+      addHandler([
+        'id', simpleVerdict.id,
+        'site', simpleVerdict.site,
+        'benefits'])
+      called.should.be.true
+      makeCalledFalse()
+      return
+    )
+
+    it('should route to unknown argv handler when verdict unknown', ->
+      argvParser.__set__('unknownArgvHandler', makeCalledTrue)
+      addHandler([
+        'id', simpleVerdict.id,
+        'site', simpleVerdict.site,
+        'foo'])
+      called.should.be.true
+      makeCalledFalse()
+      addHandler([
+        'foo',
+        'id', simpleVerdict.id,
+        'site', simpleVerdict.site])
+      called.should.be.true
+      makeCalledFalse()
+      return
+    )
+
+    it('should route to unknown argv handler when verdict field unknown', ->
+      argvParser.__set__('unknownArgvHandler', makeCalledTrue)
+      addHandler([
+        'id', simpleVerdict.id,
+        'site', simpleVerdict.site,
+        'price', 'foo', simpleVerdict.price.target
+      ])
+      called.should.be.true
+      makeCalledFalse()
       return
     )
     return
   )
 
   describe('remove handler', ->
-    argvParser = rewire('../lib/argv_parser.js')
     removeHandler = argvParser.__get__('removeHandler')
+    simpleVerdict =
+      id: 'test0000'
+      site: 'www.example.com'
+      price:
+        compare: 'under'
+        target: 100
+
     called = false
     makeCalledTrue = ->
       called = true
       return
-    mockErrorMsg = 'mock error'
-    throwMockError = ->
-      throw new Error(mockErrorMsg)
-    defaultProduct =
-      id: 'test0000'
-      site: 'www.example.com'
-    beforeEach(->
+    makeCalledFalse = ->
       called = false
-      argvParser.__set__({
-        console:
-          log: ->
-        process:
-          exit: ->
+      return
+    restore = null
+    beforeEach(->
+      makeCalledFalse()
+      restore = argvParser.__set__({
         fs:
+          readFileSync: ->
+            return JSON.stringify([simpleVerdict])
           writeFileSync: ->
-          readFileSync: ->
-            return JSON.stringify([defaultProduct])
-      })
-      return
-    )
-
-    it('should end with process exit when only id given', ->
-      argvParser.__set__({
-        process:
-          exit: makeCalledTrue
-      })
-      removeHandler(['id', defaultProduct.id])
-      called.should.be.true
-      return
-    )
-
-    it('should end with process exit when both id, site given', ->
-      argvParser.__set__({
-        process:
-          exit: makeCalledTrue
-      })
-      removeHandler(['id', defaultProduct.id, 'site', defaultProduct.site])
-      called.should.be.true
-      return
-    )
-
-    it('should route to lack arg handler when id or site field not given', ->
-      revert = argvParser.__set__({
-        lackArgHandler: ->
-          makeCalledTrue()
-          throwMockError()
-          return
-      })
-      removeHandler.bind(null, ['id']).should.throw(mockErrorMsg)
-      removeHandler.bind(null, ['id', 'test0000', 'site']).should.throw(mockErrorMsg)
-      called.should.be.true
-      revert()
-      return
-    )
-
-    it('should route to lack arg handler when id not given', ->
-      revert = argvParser.__set__({
-        lackArgHandler: ->
-          makeCalledTrue()
-          throwMockError()
-          return
-      })
-      removeHandler.bind(null, ['site', 'www.example.com']).should.throw(mockErrorMsg)
-      called.should.be.true
-      revert()
-      return
-    )
-
-    it('should route to unknown arg handler when meet unknown argument', ->
-      revert = argvParser.__set__({
+        verdictNotFoundHandler: ->
+        missingArgHandler: ->
         unknownArgvHandler: ->
-          makeCalledTrue()
-          throwMockError()
-          return
       })
-      removeHandler.bind(null, ['id', 'test0000', 'foo', 'site', 'www.example.com'])
-        .should.throw(mockErrorMsg)
-      called.should.be.true
-      revert()
       return
     )
-
-    it('should remove record when only id given', ->
+    afterEach(-> restore())
+    
+    it('should remove verdict when both id and site matched', ->
       argvParser.__set__({
         fs:
           readFileSync: ->
-            return JSON.stringify([defaultProduct])
+            return JSON.stringify([simpleVerdict])
           writeFileSync: (file, data) ->
+            makeCalledTrue()
             data.should.equal(JSON.stringify([]))
             return
       })
-      removeHandler(['id', defaultProduct.id])
+      removeHandler(['id', simpleVerdict.id, 'site', simpleVerdict.site])
+      called.should.be.true
       return
     )
     
-    it('should remove record when both id and site given', ->
+    it('should make result no depence on keywords sequence', ->
+      writeData = writeDataA = writeDataB = null
       argvParser.__set__({
         fs:
           readFileSync: ->
-            return JSON.stringify([defaultProduct])
+            return JSON.stringify([simpleVerdict])
           writeFileSync: (file, data) ->
+            makeCalledTrue()
             data.should.equal(JSON.stringify([]))
             return
       })
-      removeHandler(['id', defaultProduct.id, 'site', defaultProduct.site])
+      removeHandler(['id', simpleVerdict.id, 'site', simpleVerdict.site])
+      called.should.be.true
+      removeHandler(['site', simpleVerdict.site, 'id', simpleVerdict.id])
+      called.should.be.true
       return
     )
 
-    it('should throw not found error when id or site not existed', ->
-      argvParser.__set__({
-        fs:
-          readFileSync: ->
-            return JSON.stringify([defaultProduct])
-          writeFileSync: ->
-      })
-      removeHandler.bind(null, ['id', 'notexistid', 'site', 'www.example.com'])
-        .should.throw(/not founded!$/)
-      removeHandler.bind(null, ['id', defaultProduct.id, 'site', 'www.notexist.com'])
-        .should.throw(/not founded!$/)
+    it('should route to not found handler when given id and site not match', ->
+      argvParser.__set__('verdictNotFoundHandler', makeCalledTrue)
+      removeHandler(['id', 'foo', 'site', simpleVerdict.site])
+      called.should.be.true
+      makeCalledFalse()
+      removeHandler(['id', simpleVerdict.id, 'site', 'www.foobar.com'])
+      called.should.be.true
+      makeCalledFalse()
+      removeHandler(['id', 'foo', 'site', 'www.foobar.com'])
+      called.should.be.true
+      makeCalledFalse()
       return
     )
 
-    it('should throw not found error when only given id not existed', ->
-      argvParser.__set__({
-        fs:
-          readFileSync: ->
-            return JSON.stringify([defaultProduct])
-          writeFileSync: ->
-      })
-      removeHandler.bind(null, ['id', 'notexistid']).should.throw(/not founded!$/)
+    it('should route to missing arg handler when id or site value not given', ->
+      argvParser.__set__('missingArgHandler', makeCalledTrue)
+      removeHandler(['id'])
+      called.should.be.true
+      makeCalledFalse()
+      removeHandler(['id', simpleVerdict.id, 'site'])
+      called.should.be.true
+      makeCalledFalse()
+      removeHandler(['site', 'id', simpleVerdict.id])
+      called.should.be.true
+      makeCalledFalse()
+      removeHandler(['id', 'site', simpleVerdict.site])
+      called.should.be.true
+      makeCalledFalse()
+      removeHandler(['site', simpleVerdict.site, 'id'])
+      called.should.be.true
+      makeCalledFalse()
+      return
+    )
+
+    it('should route to missing arg handler when id not given', ->
+      argvParser.__set__('missingArgHandler', makeCalledTrue)
+      removeHandler(['site', simpleVerdict.site])
+      called.should.be.true
+      return
+    )
+
+    it('should route to missing arg handler when site not given', ->
+      argvParser.__set__('missingArgHandler', makeCalledTrue)
+      removeHandler(['id', simpleVerdict.id])
+      called.should.be.true
+      return
+    )
+
+    it('should route to unknown arg handler when keywords unknown', ->
+      argvParser.__set__('unknownArgvHandler', makeCalledTrue)
+      removeHandler(['id', simpleVerdict.id, 'foo', 'site', simpleVerdict.site])
+      called.should.be.true
       return
     )
     return
   )
 
   describe('reset handler', ->
-    argvParser = rewire('../lib/argv_parser.js')
     resetHandler = argvParser.__get__('resetHandler')
+
+    writeFileCalled = false
+    makeWriteFileCalledTrue = ->
+      writeFileCalled = true
+      return
+    makeWriteFileCalledFalse = ->
+      writeFileCalled = false
+      return
+    userInputDone = false
+    makeUserInputDoneTrue = ->
+      userInputDone = true
+      return
+    makeUserInputDoneFalse = ->
+      userInputDone = false
+      return
+    restore = null
+    beforeEach(->
+      makeWriteFileCalledFalse()
+      makeUserInputDoneFalse()
+      restore = argvParser.__set__({
+        fs:
+          writeFileSync: makeWriteFileCalledTrue
+        process:
+          stdin:
+            setEncoding: ->
+            once: (ev, callback) ->
+              makeUserInputDoneTrue()
+              ev == 'data' and callback('yes')
+              return
+          stdout:
+            write: ->
+        invalidResponseHandler: ->
+      })
+      return
+    )
+    afterEach(-> restore())
+
+    it('should clear verdicts record when user approve reset', ->
+      argvParser.__set__({
+        fs:
+          writeFileSync: (file, data) ->
+            makeWriteFileCalledTrue()
+            data.should.equal(JSON.stringify([]))
+            return
+      })
+      resetHandler()
+      writeFileCalled.should.be.true
+      userInputDone.should.be.true
+      return
+    )
+
+    it('should not clear verdicts record when user not approve reset', ->
+      argvParser.__set__({
+        process:
+          stdin:
+            setEncoding: ->
+            once: (ev, callback) ->
+              makeUserInputDoneTrue()
+              ev == 'data' and callback('no')
+              return
+          stdout:
+            write: ->
+      })
+      resetHandler()
+      writeFileCalled.should.be.false
+      userInputDone.should.be.true
+      return
+    )
+
+    it('should route to invalid response handler when user input invalid', ->
+      called = false
+      argvParser.__set__({
+        process:
+          stdin:
+            setEncoding: ->
+            once: (ev, callback) ->
+              makeUserInputDoneTrue()
+              ev == 'data' and callback('foo')
+              return
+          stdout:
+            write: ->
+        invalidResponseHandler: ->
+          called = true
+          return
+      })
+      resetHandler()
+      writeFileCalled.should.be.false
+      userInputDone.should.be.true
+      called.should.be.true
+      return
+    )
+    return
+  )
+
+  describe('list handler', ->
+    listHandler = argvParser.__get__('listHandler')
+
     called = false
     makeCalledTrue = ->
       called = true
       return
-    beforeEach(->
+    makeCalledFalse = ->
       called = false
-      argvParser.__set__({
-        console:
-          log: ->
+    restore = null
+    beforeEach(->
+      makeCalledFalse()
+      restore = argvParser.__set__({
         fs:
-          writeFileSync: ->
-        process:
-          stdin:
-            setEncoding: ->
-            once: (ev, callback) ->
-              ev == 'data' and callback()
-              return
-          stdout:
-            write: ->
-          exit: makeCalledTrue
+          readFileSync: ->
+            makeCalledTrue()
+            return JSON.stringify([])
       })
       return
     )
+    afterEach(-> restore())
 
-    it('should end with process exit when user approve reset', ->
-      argvParser.__set__({
-        fs:
-          writeFileSync: ->
-        process:
-          stdin:
-            setEncoding: ->
-            once: (ev, callback) ->
-              ev == 'data' and callback('yes')
-              return
-          stdout:
-            write: ->
-          exit: makeCalledTrue
-      })
-      resetHandler()
+    it('should read verdicts record', ->
+      listHandler()
       called.should.be.true
       return
     )
+    return
+  )
 
-    it('should end with process exit when user not approve reset', ->
-      argvParser.__set__({
-        process:
-          stdin:
-            setEncoding: ->
-            once: (ev, callback) ->
-              ev == 'data' and callback('no')
-              return
-          stdout:
-            write: ->
-          exit: makeCalledTrue
-      })
-      resetHandler()
-      called.should.be.true
+  describe('help handler', ->)
+
+  describe('verdict not found handler', ->
+    verdictNotFoundHandler = argvParser.__get__('verdictNotFoundHandler')
+    it('should throw error', ->
+      verdictNotFoundHandler.should.throw('input error, verdict not founded')
       return
     )
+    return
+  )
 
-    it('should throw invalid response error when user input invalid', ->
-      argvParser.__set__({
-        process:
-          stdin:
-            setEncoding: ->
-            once: (ev, callback) ->
-              ev == 'data' and callback('Invalid')
-              return
-          stdout:
-            write: ->
-          exit: makeCalledTrue
-      })
-      resetHandler.should.throw(/^Invalid response/)
-      called.should.be.false
+  describe('unknown argv handler', ->
+    unknownArgvHandler = argvParser.__get__('unknownArgvHandler')
+    it('should throw error', ->
+      unknownArgvHandler.should.throw('input error, unknown arguments')
       return
     )
+    return
+  )
 
-    it('should clear all record when user approve it', ->
-      argvParser.__set__({
-        fs:
-          writeFileSync: (file, data) ->
-            data.should.equal(JSON.stringify([]))
-            return
-        process:
-          stdin:
-            setEncoding: ->
-            once: (ev, callback) ->
-              ev == 'data' and callback('yes')
-              return
-          stdout:
-            write: ->
-          exit: makeCalledTrue
-      })
-      resetHandler()
-      called.should.be.true
+  describe('missing arg handler', ->
+    missingArgHandler = argvParser.__get__('missingArgHandler')
+    it('should throw error', ->
+      missingArgHandler.should.throw('input error, missing arguments')
       return
     )
+    return
+  )
 
-    it('should cancel reset operation when user not approve it', ->
-      writeFileCalled = false
-      argvParser.__set__({
-        fs:
-          writeFileSync: ->
-            writeFileCalled = true
-            return
-        process:
-          stdin:
-            setEncoding: ->
-            once: (ev, callback) ->
-              ev == 'data' and callback('no')
-              return
-          stdout:
-            write: ->
-          exit: makeCalledTrue
-      })
-      resetHandler()
-      writeFileCalled.should.be.false
-      called.should.be.true
+  describe('invalid response handler', ->
+    invalidResponseHandler = argvParser.__get__('invalidResponseHandler')
+    it('should throw error', ->
+      invalidResponseHandler.bind(null, 'foo')
+        .should.throw('input error, invalid response')
       return
     )
     return

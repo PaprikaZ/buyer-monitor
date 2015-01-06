@@ -4,7 +4,7 @@
 
   "logFileName": "ebuy_monitor.log",
   "loggerLevel": "info",
-  "productFileName": "product.json",
+  "verdictsFileName": "verdicts.json",
 
   "redisHost": "127.0.0.1",
   "redisPort": 6379,

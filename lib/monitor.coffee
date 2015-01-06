@@ -9,7 +9,7 @@ s = require('./seed.js')
 Seed = s.Seed
 MANDATORY_BASE_FIELDS = s.MANDATORY_BASE_FIELDS
 db = require('./db.js')
-productFile = '../product.json'
+verdictsFileName = path.join(__dirname, '../', config.verdictsFileName)
 
 shortenToken = (token) ->
   return token.slice(0, 7)
@@ -24,7 +24,7 @@ class Monitor
     else
       throw new Error('access tokens empty')
 
-    verdicts = JSON.parse(fs.readFileSync(path.join(__dirname, productFile)))
+    verdicts = JSON.parse(fs.readFileSync(verdictsFileName))
     if 0 < verdicts.length
       @seeds = verdicts.map((item) -> new Seed(item))
     else
