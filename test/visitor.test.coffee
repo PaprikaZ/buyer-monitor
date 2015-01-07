@@ -1,20 +1,10 @@
-sinon = require('sinon')
-fs = require('fs')
-path = require('path')
 rewire = require('rewire')
 Seed = require('../lib/seed.js').Seed
-verdicts = require('./cache/builder.js').generateVerdicts()
-pickVerdict = ->
-  min = 0
-  max = verdicts.length - 1
-  idx = Math.floor(Math.random() * (max - min + 1) + min)
-  return verdicts[idx]
-urlToHtmlTable = require('./cache/html.json')
-visitor = rewire('../lib/visitor.js')
+#verdicts = require('./cache/builder.js').generateVerdicts()
+#randomVerdict = verdicts[Math.floor(Math.random() * verdicts.length)]
 
 describe('visitor', ->
-  createVisitor = visitor.createVisitor
-  Visitor = visitor.__get__('Visitor')
+  visitor = rewire('../lib/visitor.js')
   visitor.__set__({
     logger:
       debug: ->
@@ -24,123 +14,208 @@ describe('visitor', ->
     db:
       getClient: ->
         return {lpush: ->}
+    createParser: 
+      parse: ->
+        return {
+          title: 'test title'
+          price: 100
+          fullPrice: 200
+          review: 9
+          instore: true
+          benefits: []
+          discount: 50
+        }
   })
-  testAmazonCNProduct =
+  createVisitor = visitor.createVisitor
+  AmazonCNVisitor = visitor.__get__('AmazonCNVisitor')
+  AmazonUSVisitor = visitor.__get__('AmazonUSVisitor')
+  AmazonJPVisitor = visitor.__get__('AmazonJPVisitor')
+  JingDongVisitor = visitor.__get__('JingDongVisitor')
+  testAmazonCNVerdict =
     id: 'testamazoncnid'
     site: 'www.amazon.cn'
     price:
       compare: 'under'
       target: 80
-  testAmazonUSProduct =
+  testAmazonCNSeed = new Seed(testAmazonCNVerdict)
+  testAmazonUSVerdict =
     id: 'testamazonusid'
     site: 'www.amazon.com'
     discount:
       compare: 'above'
       target: 50
-  testAmazonJPProduct =
+  testAmazonUSSeed = new Seed(testAmazonUSVerdict)
+  testAmazonJPVerdict =
     id: 'testamazonjpid'
     site: 'www.amazon.co.jp'
     instore:
       compare: 'equal'
       target: true
-  testJingDongProduct =
+  testAmazonJPSeed = new Seed(testAmazonJPVerdict)
+  testJingDongVerdict =
     id: 'testjingdongid'
     site: 'www.jd.com'
     review:
       compare: 'above'
       target: 8
-  testUnknownSiteProduct =
-    id: 'testunknownsiteid'
-    site: 'www.example.com'
-    review:
-      compare: 'above'
-      target: 9
+  testJingDongSeed = new Seed(testJingDongVerdict)
 
-  describe('create', ->
+  describe('create visitor', ->
+    called = false
+    makeCalledTrue = ->
+      called = true
+      return
+    makeCalledFalse = ->
+      called = false
+      return
+    restore = null
+    beforeEach(->
+      makeCalledFalse()
+      restore = visitor.__set__({
+        invalidSiteHandler: ->
+      })
+      return
+    )
+    afterEach(-> restore())
+
     it('should given amazon cn visitor when seed site be www.amazon.cn', ->
-      AmazonCNVisitor = visitor.__get__('AmazonCNVisitor')
-      v = createVisitor(new Seed(testAmazonCNProduct))
+      v = createVisitor(testAmazonCNSeed)
       v.should.be.a.AmazonCNVisitor
       return
     )
 
     it('should given amazon us visitor when seed site be www.amazon.com', ->
       AmazonUSVisitor = visitor.__get__('AmazonUSVisitor')
-      v = createVisitor(new Seed(testAmazonUSProduct))
+      v = createVisitor(testAmazonUSSeed)
       v.should.be.a.AmazonUSVisitor
       return
     )
 
     it('should given amazon jp visitor when seed site be www.amazon.co.jp', ->
       AmazonJPVisitor = visitor.__get__('AmazonJPVisitor')
-      v = createVisitor(new Seed(testAmazonJPProduct))
+      v = createVisitor(testAmazonJPSeed)
       v.should.be.a.AmazonJPVisitor
       return
     )
 
     it('should given jingdong visitor when seed site be www.jd.com', ->
       JingDongVisitor = visitor.__get__('JingDongVisitor')
-      v = createVisitor(new Seed(testJingDongProduct))
+      v = createVisitor(testJingDongSeed)
       v.should.be.a.JingDongVisitor
       return
     )
 
-    it('should throw error when seed site not support', ->
-      createVisitor.bind(null, {site: 'www.example.com'})
-        .should.throw('no available visitor')
+    it('should route to invalid site handler when seed site not support', ->
+      visitor.__set__('invalidSiteHandler', makeCalledTrue)
+      createVisitor({site: 'www.example.com'})
+      called.should.be.true
       return
     )
     return
   )
 
   describe('visit', ->
-    it('should transfer control to page handler when everything ok', ->
-      called = false
-      revert = visitor.__set__({
+    called = false
+    makeCalledTrue = ->
+      called = true
+      return
+    makeCalledFalse = ->
+      called = true
+      return
+    restore = null
+    beforeEach(->
+      makeCalledFalse()
+      restore = visitor.__set__({
+        request:
+          get: ->
+        requestErrorHandler: ->
+        responseErrorHandler: ->
+      })
+      return
+    )
+    afterEach(-> restore())
+
+    it('should route to page process when request ok', ->
+      visitor.__set__({
         request:
           get: (url, callback) ->
-            callback(null, {statusCode: 200}, 'test body')
+            callback(null, {statusCode: 200}, 'foo')
             return
       })
-      v = createVisitor(new Seed(testAmazonCNProduct))
+      v = createVisitor(testAmazonCNSeed)
       v.processPage = (body) ->
-        called = true
-        body.should.equal('test body')
+        makeCalledTrue()
+        body.should.equal('foo')
         return
       v.visit()
       called.should.be.true
-      revert()
       return
     )
 
-    it('should bypass error when request caught error', ->
-      revert = visitor.__set__({
+    it('should route to request error handler when request caught error', ->
+      visitor.__set__({
         request:
           get: (url, callback) ->
             callback(new Error('test mock error'))
             return
+        requestErrorHandler: (visitor, url, err) ->
+          makeCalledTrue()
+          visitor.should.equal(AmazonCNVisitor)
+          err.message.should.equal('test mock error')
+          return
       })
-      v = createVisitor(new Seed(testAmazonCNProduct))
-      v.visit.bind(v).should.throw('test mock error')
-      revert()
+      v = createVisitor(testAmazonCNSeed)
+      v.visit()
+      called.should.be.true
       return
     )
 
-    it('should log the response when response is nok', ->
-      called = false
-      revert = visitor.__set__({
+    it('should route to response error handler when response nok', ->
+      visitor.__set__({
         request:
           get: (url, callback) ->
-            callback(null, {statusCode: 201}, 'test body')
+            callback(null, {statusCode: -1}, 'bar')
             return
+        responseErrorHandler: (visitor, res, body) ->
+          makeCalledTrue()
+          visitor.should.equal(AmazonCNVisitor)
+          body.should.equal('bar')
+          return
       })
-      v = createVisitor(new Seed(testAmazonCNProduct))
-      v.errorResponseHandler = (res, body) ->
-        called = true
-        return v.constructor.prototype.errorResponseHandler(res, body)
+      v = createVisitor(testAmazonCNSeed)
       v.visit()
       called.should.be.true
-      revert()
+      return
+    )
+    return
+  )
+
+  describe('request error handler', ->
+    requestErrorHandler = visitor.__get__('requestErrorHandler')
+    it('should throw error', ->
+      requestErrorHandler.bind(null, AmazonCNVisitor, '', new Error('mock error'))
+        .should.throw('mock error')
+      return
+    )
+    return
+  )
+
+  describe('response error handler', ->
+    responseErrorHandler = visitor.__get__('responseErrorHandler')
+    it('should not throw error', ->
+      responseErrorHandler.bind(
+        null, AmazonCNVisitor, {statusCode: -1, url: 'www.amazon.cn'}, 'foo'
+      ).should.not.throw()
+      return
+    )
+    return
+  )
+
+  describe('invalid site handler', ->
+    invalidSiteHandler = visitor.__get__('invalidSiteHandler')
+    it('should throw error', ->
+      invalidSiteHandler.bind(null, 'www.example.com')
+        .should.throw('invalid data error, no available visitor for invalid site')
       return
     )
     return

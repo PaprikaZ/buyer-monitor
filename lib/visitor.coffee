@@ -5,7 +5,6 @@ s = require('./seed.js')
 MANDATORY_EXPAND_FIELDS = s.MANDATORY_EXPAND_FIEL
 MANDATORY_BASE_FIELDS = s.MANDATORY_BASE_FIELDS
 createParser = require('./page_parser.js').createParser
-messenger = require('./messenger.js')
 db = require('./db.js')
 
 class Visitor
@@ -20,24 +19,11 @@ class Visitor
         if res.statusCode == 200
           self.processPage(body)
         else
-          self.errorResponseHandler(res, body)
+          responseErrorHandler(self.constructor, res, body)
       else
-        self.failedRequestHandler(err)
+        requestErrorHandler(self.constructor, self.seed.url, err)
       return
     )
-    return
-
-  failedRequestHandler: (err) ->
-    logger.error('%s request failed.', @constructor.name)
-    logger.error('msg: %s', err.message)
-    throw err
-    return
-
-  errorResponseHandler: (res, body) ->
-    logger.error('%s response error.', @constructor.name)
-    logger.error('url: %s', res.url)
-    logger.error('status code: %s', res.statusCode)
-    logger.error('body: %s', body)
     return
 
   processPage: (html) ->
@@ -45,24 +31,23 @@ class Visitor
     result = @parsePage(html)
 
     if @seed.verdict(result)
-      delayDebugMsg = 'push delay '
+      delayDebugMsg = 'push and delay '
       MANDATORY_BASE_FIELDS.map((field) ->
         delayDebugMsg += util.format('%s %s', field, result[field])
         return
       )
       logger.debug(delayDebugMsg)
 
-      @client.lpush(config.redisPushQueueKey, JSON.stringify(result))
-
-      pushMsg = {}
+      delayMsg = {}
       MANDATORY_BASE_FIELDS.map((field) ->
-        pushMsg[field] = result[field]
+        delayMsg[field] = result[field]
         return
       )
-      @client.lpush(config.redisDelayQueueKey, JSON.stringify(pushMsg))
+      @client.lpush(config.redisDelayQueueKey, JSON.stringify(delayMsg))
+      @client.lpush(config.redisPushQueueKey, JSON.stringify(result))
 
     result.date = date.toUTCString()
-    @client.lpush(config.historyKey, JSON.stringify(result))
+    @client.lpush(config.redisHistoryKey, JSON.stringify(result))
     return
 
   parsePage: (html) ->
@@ -75,27 +60,40 @@ class Visitor
     MANDATORY_BASE_FIELDS.map(mountField)
     MANDATORY_EXPAND_FIELDS.map(mountField)
 
-    for attr, val of createParser(@seed.site).parse(html)
-      result[attr] = val
-    logger.info(result)
+    for field, val of createParser(@seed.site).parse(html)
+      result[field] = val
+    logger.debug(result)
     return result
 
 class AmazonCNVisitor extends Visitor
-
 class AmazonUSVisitor extends Visitor
-
 class AmazonJPVisitor extends Visitor
-
 class JingDongVisitor extends Visitor
 
-module.exports.createVisitor = (seed) ->
+requestErrorHandler = (visitor, url, err) ->
+  logger.error('%s get request failed', visitor)
+  logger.error('%s url: %s', visitor, url)
+  logger.error('%s err: %s', visitor, err.message)
+  throw err
+
+responseErrorHandler = (visitor, res, body) ->
+  logger.error('%s response error', visitor)
+  logger.error('%s url: %s', visitor, res.url)
+  logger.error('%s status code: %s', visitor, res.statusCode)
+  logger.error('%s body: %s', visitor, body)
+  return
+
+invalidSiteHandler = (site) ->
+  logger.error('no available visitor for site %s', site)
+  throw new Error('invalid data error, no available visitor for invalid site')
+
+exports.createVisitor = (seed) ->
   visitor =
     switch seed.site
       when 'www.amazon.com' then new AmazonUSVisitor(seed)
       when 'www.amazon.cn' then new AmazonCNVisitor(seed)
       when 'www.amazon.co.jp' then new AmazonJPVisitor(seed)
       when 'www.jd.com' then new JingDongVisitor(seed)
-      else
-        logger.error('there is no available visitor for site %s', seed.site)
-        throw new Error('no available visitor')
+      else invalidSiteHandler(seed.site)
   return visitor
+module.exports = exports

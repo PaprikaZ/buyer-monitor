@@ -38,7 +38,6 @@ class Parser
     )
     result.discount = Math.round((1 - result.price / result.fullPrice) * 100)
 
-    console.log(result)
     MANDATORY_OUTPUT_FIELDS.some((field) ->
       return result[field] == '' or
              result[field] != result[field] or
