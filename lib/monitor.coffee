@@ -104,14 +104,16 @@ class Monitor
 
   startMonitoring: ->
     self = @
-    setInterval(self.processDelayQueue, config.monitorInterval)
-    setInterval(self.processPushQueue, config.pushInterval)
+
+    self.processDelayQueue()
+    setInterval((-> self.processDelayQueue()), config.monitorInterval)
+    setInterval((-> self.processPushQueue()), config.pushInterval)
     return
 
   start: ->
     self = @
 
-    token.verify()
+    token.verify(@accessTokens)
     poll = setInterval((->
       if token.isVerificationDone()
         clearInterval(poll)
