@@ -156,7 +156,8 @@ describe('argv parser module', function() {
           writeFileSync: function() {}
         },
         missingArgHandler: function() {},
-        unknownArgvHandler: function() {}
+        unknownArgvHandler: function() {},
+        illegalValueHandler: function() {}
       });
     });
     afterEach(function() {
@@ -262,7 +263,6 @@ describe('argv parser module', function() {
       makeCalledFalse();
       addHandler(['id', simpleVerdict.id, 'site', simpleVerdict.site, 'benefits']);
       called.should.be["true"];
-      makeCalledFalse();
     });
     it('should route to unknown argv handler when verdict unknown', function() {
       argvParser.__set__('unknownArgvHandler', makeCalledTrue);
@@ -271,13 +271,21 @@ describe('argv parser module', function() {
       makeCalledFalse();
       addHandler(['foo', 'id', simpleVerdict.id, 'site', simpleVerdict.site]);
       called.should.be["true"];
-      makeCalledFalse();
     });
     it('should route to unknown argv handler when verdict field unknown', function() {
       argvParser.__set__('unknownArgvHandler', makeCalledTrue);
       addHandler(['id', simpleVerdict.id, 'site', simpleVerdict.site, 'price', 'foo', simpleVerdict.price.target]);
       called.should.be["true"];
-      makeCalledFalse();
+    });
+    it('should route to illegal value handler when id value illegal', function() {
+      argvParser.__set__('illegalValueHandler', makeCalledTrue);
+      addHandler(['id', 'notvalidis...', 'site', simpleVerdict.site, 'price', simpleVerdict.price.compare, simpleVerdict.price.target]);
+      called.should.be["true"];
+    });
+    it('should route to illegal value handler when site value illegal', function() {
+      argvParser.__set__('illegalValueHandler', makeCalledTrue);
+      addHandler(['id', simpleVerdict.id, 'site', 'www.example.com,cn', 'price', simpleVerdict.price.compare, simpleVerdict.price.target]);
+      called.should.be["true"];
     });
   });
   describe('remove handler', function() {
@@ -360,7 +368,6 @@ describe('argv parser module', function() {
       makeCalledFalse();
       removeHandler(['id', 'foo', 'site', 'www.foobar.com']);
       called.should.be["true"];
-      makeCalledFalse();
     });
     it('should route to missing arg handler when id or site value not given', function() {
       argvParser.__set__('missingArgHandler', makeCalledTrue);
@@ -378,7 +385,6 @@ describe('argv parser module', function() {
       makeCalledFalse();
       removeHandler(['site', simpleVerdict.site, 'id']);
       called.should.be["true"];
-      makeCalledFalse();
     });
     it('should route to missing arg handler when id not given', function() {
       argvParser.__set__('missingArgHandler', makeCalledTrue);
@@ -554,6 +560,13 @@ describe('argv parser module', function() {
     invalidResponseHandler = argvParser.__get__('invalidResponseHandler');
     it('should throw error', function() {
       invalidResponseHandler.bind(null, 'foo').should["throw"]('input error, invalid response');
+    });
+  });
+  describe('illegal value handler', function() {
+    var illegalValueHandler;
+    illegalValueHandler = argvParser.__get__('illegalValueHandler');
+    it('should throw error', function() {
+      illegalValueHandler.bind(null, 'foo').should["throw"]('input error, illegal value');
     });
   });
 });

@@ -167,6 +167,7 @@ describe('argv parser module', ->
           writeFileSync: ->
         missingArgHandler: ->
         unknownArgvHandler: ->
+        illegalValueHandler: ->
       })
       return
     )
@@ -326,7 +327,6 @@ describe('argv parser module', ->
         'site', simpleVerdict.site,
         'benefits'])
       called.should.be.true
-      makeCalledFalse()
       return
     )
 
@@ -343,7 +343,6 @@ describe('argv parser module', ->
         'id', simpleVerdict.id,
         'site', simpleVerdict.site])
       called.should.be.true
-      makeCalledFalse()
       return
     )
 
@@ -355,7 +354,28 @@ describe('argv parser module', ->
         'price', 'foo', simpleVerdict.price.target
       ])
       called.should.be.true
-      makeCalledFalse()
+      return
+    )
+
+    it('should route to illegal value handler when id value illegal', ->
+      argvParser.__set__('illegalValueHandler', makeCalledTrue)
+      addHandler([
+        'id', 'notvalidis...',
+        'site', simpleVerdict.site,
+        'price', simpleVerdict.price.compare, simpleVerdict.price.target
+      ])
+      called.should.be.true
+      return
+    )
+
+    it('should route to illegal value handler when site value illegal', ->
+      argvParser.__set__('illegalValueHandler', makeCalledTrue)
+      addHandler([
+        'id', simpleVerdict.id,
+        'site', 'www.example.com,cn',
+        'price', simpleVerdict.price.compare, simpleVerdict.price.target
+      ])
+      called.should.be.true
       return
     )
     return
@@ -436,7 +456,6 @@ describe('argv parser module', ->
       makeCalledFalse()
       removeHandler(['id', 'foo', 'site', 'www.foobar.com'])
       called.should.be.true
-      makeCalledFalse()
       return
     )
 
@@ -456,7 +475,6 @@ describe('argv parser module', ->
       makeCalledFalse()
       removeHandler(['site', simpleVerdict.site, 'id'])
       called.should.be.true
-      makeCalledFalse()
       return
     )
 
@@ -643,6 +661,16 @@ describe('argv parser module', ->
     it('should throw error', ->
       invalidResponseHandler.bind(null, 'foo')
         .should.throw('input error, invalid response')
+      return
+    )
+    return
+  )
+
+  describe('illegal value handler', ->
+    illegalValueHandler = argvParser.__get__('illegalValueHandler')
+    it('should throw error', ->
+      illegalValueHandler.bind(null, 'foo')
+        .should.throw('input error, illegal value')
       return
     )
     return

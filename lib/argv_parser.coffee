@@ -10,26 +10,26 @@ AVAILABLE_VERDICT_FIELDS = _seed.AVAILABLE_VERDICT_FIELDS
 config = require('./config.js')
 verdictsFileName = path.join(__dirname, '../', config.verdictsFileName)
 
+illegalValueHandler = (field) ->
+  console.error('illegal arguments, field %s', field)
+  throw new Error('input error, illegal value')
+
 unknownArgvHandler = ->
   console.error('unknown arguments, please see help with "node app.js help"')
   throw new Error('input error, unknown arguments')
-  return
 
 missingArgHandler = ->
   console.error('missing arguments, please see help with "node app.js help"')
   throw new Error('input error, missing arguments')
-  return
 
 verdictNotFoundHandler = (id, site) ->
   console.error('verdict id %s site %s not found', id, site)
   console.error('please check with "node app.js list"')
   throw new Error('input error, verdict not founded')
-  return
 
 invalidResponseHandler = (res) ->
   console.error('invalid response %s', res)
   throw new Error('input error, invalid response')
-  return
 
 helpHandler = ->
   console.log('Usage:')
@@ -130,14 +130,20 @@ addHandler = (argv) ->
         return
       else if remaining[0] == 'id'
         if 1 < remaining.length
-          record.id = remaining[1]
-          iter(remaining.slice(2))
+          if /^[0-9a-zA-Z]+$/.test(remaining[1])
+            record.id = remaining[1]
+            iter(remaining.slice(2))
+          else
+            illegalValueHandler('id')
         else
           missingArgHandler()
       else if remaining[0] == 'site'
         if 1 < remaining.length
-          record.site = remaining[1]
-          iter(remaining.slice(2))
+          if /^www\.\w+(\.\w{2,3}){1,2}$/.test(remaining[1])
+            record.site = remaining[1]
+            iter(remaining.slice(2))
+          else
+            illegalValueHandler('site')
         else
           missingArgHandler()
       else if remaining[0] == 'price'
