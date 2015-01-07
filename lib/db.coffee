@@ -4,7 +4,7 @@ redisRecordDBIndex = config.redisRecordDBIndex
 
 client = null
 
-module.exports.createClient = ->
+exports.createClient = ->
   client = redis.createClient(config.redisPort, config.redisHost)
   client.select(redisRecordDBIndex, (err, res) ->
     if err
@@ -17,18 +17,17 @@ module.exports.createClient = ->
   client.on('error', (err) ->
     logger.error('visitor record client caught error')
     throw err
-    return
   )
   return
 
-module.exports.getClient = ->
+exports.getClient = ->
   if client
     return client
   else
     logger.debug('database client should be created just after monitor launched')
     throw new Error('client not initialized')
 
-module.exports.clearQueue = ->
+exports.clearQueue = ->
   client.del(config.redisPushQueueKey, (err, res) ->
     if err
       logger.error('clear push queue %s failed', config.redisPushQueueKey)
@@ -49,3 +48,4 @@ module.exports.clearQueue = ->
     return
   )
   return
+module.exports = exports
