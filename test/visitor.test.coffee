@@ -3,7 +3,7 @@ Seed = require('../lib/seed.js').Seed
 #verdicts = require('./cache/builder.js').generateVerdicts()
 #randomVerdict = verdicts[Math.floor(Math.random() * verdicts.length)]
 
-describe('visitor', ->
+describe('visitor module', ->
   visitor = rewire('../lib/visitor.js')
   visitor.__set__({
     logger:

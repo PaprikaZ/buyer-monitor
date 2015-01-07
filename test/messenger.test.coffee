@@ -1,6 +1,6 @@
 rewire = require('rewire')
 
-describe('messenger', ->
+describe('messenger module', ->
   messenger = rewire('../lib/messenger.js')
   messenger.__set__({
     logger:

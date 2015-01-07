@@ -3,7 +3,7 @@ var rewire;
 
 rewire = require('rewire');
 
-describe('seed', function() {
+describe('seed module', function() {
   var Seed, discountCompare, knownSite, mockErrorMsg, notAnNumber, priceCompare, reviewCompare, seed, testDiscount, testID, testPrice, testReview, unknownSite;
   seed = rewire('../lib/seed.js');
   seed.__set__({

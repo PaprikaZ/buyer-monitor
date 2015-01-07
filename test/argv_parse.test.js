@@ -3,7 +3,7 @@ var rewire;
 
 rewire = require('rewire');
 
-describe('argv parser', function() {
+describe('argv parser module', function() {
   var argvParser;
   argvParser = rewire('../lib/argv_parser.js');
   argvParser.__set__({

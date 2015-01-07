@@ -1,15 +1,15 @@
-fs = require('fs')
 config = require('../lib/config.js')
 rewire = require('rewire')
 verdicts = require('./cache/builder.js').generateVerdicts()
-monitor = rewire('../lib/monitor.js')
+testTokens = [
+  {accessToken: 'testtoken0000'},
+  {accessToken: 'testtoken0001'},
+  {accessToken: 'testtoken0002'}
+]
+config.accounts = testTokens
 
 describe('monitor module', ->
-  config.accounts = [
-    {accessToken: 'testtoken0000'},
-    {accessToken: 'testtoken0001'},
-    {accessToken: 'testtoken0002'}
-  ]
+  monitor = rewire('../lib/monitor.js')
   monitor.__set__({
     logger:
       debug: ->
@@ -22,90 +22,38 @@ describe('monitor module', ->
         return JSON.stringify(verdicts)
     db:
       getClient: -> {rpop: ->}
+    messenger:
+      push: ->
+    token:
+      verify: ->
+      isVerificationDone: -> true
+      getValidTokens: config.accounts
+    createVisitor: -> {visit: ->}
   })
   createMonitor = monitor.createMonitor
 
   describe('create monitor', ->
-    it('should throw access token empty error when no token found', ->
-      revert = monitor.__set__({
-        config:
-          accounts: []
-      })
-      createMonitor.should.throw('access tokens empty')
-      revert()
+    it('should throw error when no token configured', ->
+      restore = monitor.__set__('config', {accounts: []})
+      createMonitor.should.throw('config error, access tokens empty')
+      restore()
       return
     )
 
-    it('should throw verdicts empty error when no verdicts found', ->
-      revert = monitor.__set__({
+    it('should throw error when no verdicts configured', ->
+      restore = monitor.__set__({
         fs:
           readFileSync: ->
             return JSON.stringify([])
       })
-      createMonitor.should.throw('products empty')
-      revert()
+      createMonitor.should.throw('config error, verdicts empty')
+      restore()
       return
     )
     return
   )
 
-  describe('verify user tokens', ->
-    it('should start monitoring when all verifications done', ->
-      counter = 0
-      called = false
-      revert = monitor.__set__({
-        request:
-          get: (options, callback) ->
-            counter = counter + 1
-            callback(null, {statusCode: 200, url: 'www.example.com'}, 'test')
-            return
-      })
-      m = createMonitor()
-      m.startMonitoring = ->
-        called = true
-        counter.should.equal(config.accounts.length)
-        return
-      m.start()
-      called.should.be.true
-      revert()
-      return
-    )
-
-    it('should throw error when all tokens are invalid', ->
-      revert = monitor.__set__({
-        request:
-          get: (options, callback) ->
-            callback(new Error('test mock error'))
-            return
-      })
-      m = createMonitor()
-      m.startMonitoring = ->
-      m.start.bind(m).should.throw('all access token is invalid')
-      revert()
-      return
-    )
-
-    it('should drop invalid tokens when all verifications done', ->
-      revert = monitor.__set__({
-        request:
-          get: (options, callback) ->
-            if options.auth.user == 'testtoken0001'
-              callback(new Error('test mock error'))
-            else
-              callback(null, {statusCode: 200, url: 'www.example.com'}, 'test')
-            return
-      })
-      m = createMonitor()
-      m.startMonitoring = ->
-      m.start()
-      m.accessTokens.should.eql(['testtoken0000', 'testtoken0002'])
-      revert()
-      return
-    )
-    return
-  )
-
-  describe('monitoring', ->
+  describe('process delay queue', ->
     makeRpop = (queue) ->
       return (key, callback) ->
         if 0 < queue.length
@@ -113,101 +61,156 @@ describe('monitor module', ->
         else
           callback(null, null)
 
-    revert = null
+    called = false
+    makeCalledTrue = ->
+      called = true
+      return
+    makeCalledFalse = ->
+      called = false
+      return
+    restore = null
     beforeEach(->
-      revert = monitor.__set__({
-        request:
-          get: (options, callback) ->
-            callback(null, {statusCode: 200, url: 'www.example.com'}, 'test body')
-            return
+      makeCalledFalse()
+      restore = monitor.__set__({
         setInterval: ->
         setTimeout: ->
+        db:
+          getClient: -> {rpop: ->}
+        createVisitor: -> {visit: ->}
       })
       return
     )
+    afterEach(-> restore())
 
-    after(->
-      revert()
-      return
-    )
-
-    it('should call send requests when push queue clearing done', ->
+    it('should visit sites after delay queue cleared ', ->
       v = verdicts.slice().pop()
       queue = [JSON.stringify({id: v.id, site: v.site})]
-      revert = monitor.__set__({
+      monitor.__set__({
         db:
-          getClient: ->
-            return {rpop: makeRpop(queue)}
+          getClient: -> {rpop: makeRpop(queue)}
       })
       m = createMonitor()
-      m.sendRequests = ->
-      m.start()
+      m.visitSites = makeCalledTrue
+      m.processDelayQueue()
       queue.should.be.empty
-      revert()
+      called.should.be.true
       return
     )
 
-    it('should bypass database pop error', ->
-      revert = monitor.__set__({
+    it('should bypass database error', ->
+      monitor.__set__({
         db:
-          getClient: ->
-           return {rpop: (key, callback) ->
-            callback(new Error('test mock error'))
-            return
-           }
+          getClient: -> {rpop: (key, callback) -> callback(new Error('foo'))}
       })
       m = createMonitor()
-      m.start.bind(m).should.throw('test mock error')
-      revert()
+      m.processDelayQueue.bind(m).should.throw('foo')
       return
     )
 
-    it('should do nothing when all seeds is delayed', ->
+    it('should not visit any site when all seeds delayed', ->
       queue = verdicts
         .map((v) -> {id: v.id, site: v.site})
         .map((v) -> JSON.stringify(v))
-      called = false
-      revert = monitor.__set__({
+      monitor.__set__({
         db:
-          getClient: ->
-            return {rpop: makeRpop(queue)}
+          getClient: -> {rpop: makeRpop(queue)}
         createVisitor: ->
-          called = true
+          makeCalledTrue()
           return {visit: ->}
       })
-      createMonitor().start()
+      createMonitor().processDelayQueue()
       called.should.be.false
-      revert()
       return
     )
 
     it('should push back delayed seeds when timeout', ->
-      called = false
       v = verdicts.slice().pop()
       queue = [JSON.stringify({id: v.id, site: v.site})]
-      seeds = verdicts.slice()
-      remainingSeeds = seeds.slice(0, seeds.length - 1)
+
+      vdts = verdicts.slice()
+      remainingVdts = vdts.slice(0, vdts.length - 1)
       m = null
-      revert = monitor.__set__({
+      monitor.__set__({
         db:
-          getClient: ->
-            return {rpop: makeRpop(queue)}
+          getClient: -> {rpop: makeRpop(queue)}
         setTimeout: (callback, timeout) ->
-          called = true
-          m.seeds.map((seed) -> {id: seed.id, site: seed.site})
-            .should.eql(remainingSeeds.map((verdict) ->
-              {id: verdict.id, site: verdict.site}))
+          makeCalledTrue()
+          m.seeds.map((seed, idx) -> seed.equal(remainingVdts[idx]).should.be.true)
           callback()
-          m.seeds.map((seed) -> {id: seed.id, site: seed.site})
-            .should.eql(seeds.map((verdict) ->
-              {id: verdict.id, site: verdict.site}))
+          m.seeds.map((seed, idx) -> seed.equal(vdts[idx]).should.be.true)
           return
       })
       m = createMonitor()
-      m.sendRequests = ->
-      m.start()
+      m.visitSites = ->
+      m.processDelayQueue()
       called.should.be.true
-      revert()
+      return
+    )
+    return
+  )
+
+  describe('process push queue', ->
+    makeRpop = (queue) ->
+      return (key, callback) ->
+        if 0 < queue.length
+          callback(null, queue.pop())
+        else
+          callback(null, null)
+
+    called = false
+    makeCalledTrue = ->
+      called = true
+      return
+    makeCalledFalse = ->
+      called = false
+      return
+    restore = null
+    beforeEach(->
+      makeCalledFalse()
+      restore = monitor.__set__({
+        setInterval: ->
+        setTimeout: ->
+        db:
+          getClient: -> {rpop: ->}
+        messenger:
+          push: ->
+      })
+      return
+    )
+    afterEach(-> restore())
+
+    it('should push messages after push queue cleared', ->
+      monitor.__set__({
+        db:
+          getClient: -> {rpop: makeRpop([])}
+      })
+      m = createMonitor()
+      m.pushMessages = makeCalledTrue
+      m.processPushQueue()
+      called.should.be.true
+      return
+    )
+
+    it('should bypass database error', ->
+      monitor.__set__({
+        db:
+          getClient: -> {rpop: (key, callback) -> callback(new Error('foo'))}
+      })
+      m = createMonitor()
+      m.processPushQueue.bind(m).should.throw('foo')
+      return
+    )
+
+    it('should not push any message when push queue empty', ->
+      monitor.__set__({
+        db:
+          getClient: -> {rpop: makeRpop([])}
+        messenger:
+          push: makeCalledTrue
+      })
+      m = createMonitor()
+      m.processPushQueue()
+      called.should.be.false
       return
     )
     return

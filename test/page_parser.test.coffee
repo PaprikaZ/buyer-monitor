@@ -2,7 +2,7 @@ util = require('util')
 fs = require('fs')
 rewire = require('rewire')
 
-describe('page parser', ->
+describe('page parser module', ->
   urlToHtmlTable = require('./cache/html.json')
   pageParser = rewire('../lib/page_parser.js')
   createParser = pageParser.createParser

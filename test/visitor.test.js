@@ -5,7 +5,7 @@ rewire = require('rewire');
 
 Seed = require('../lib/seed.js').Seed;
 
-describe('visitor', function() {
+describe('visitor module', function() {
   var AmazonCNVisitor, AmazonJPVisitor, AmazonUSVisitor, JingDongVisitor, createVisitor, testAmazonCNSeed, testAmazonCNVerdict, testAmazonJPSeed, testAmazonJPVerdict, testAmazonUSSeed, testAmazonUSVerdict, testJingDongSeed, testJingDongVerdict, visitor;
   visitor = rewire('../lib/visitor.js');
   visitor.__set__({

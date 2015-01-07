@@ -3,7 +3,7 @@ var rewire;
 
 rewire = require('rewire');
 
-describe('messenger', function() {
+describe('messenger module', function() {
   var messenger, mockErrorMsg, testID, testSite, testToken, testUrl;
   messenger = rewire('../lib/messenger.js');
   messenger.__set__({

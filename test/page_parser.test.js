@@ -7,7 +7,7 @@ fs = require('fs');
 
 rewire = require('rewire');
 
-describe('page parser', function() {
+describe('page parser module', function() {
   var MANDATORY_OUTPUT_FIELDS, Parser, createParser, createSiteDescribe, pageParser, urlToHtmlTable, _MANDATORY_PARSE_FIELDS;
   urlToHtmlTable = require('./cache/html.json');
   pageParser = rewire('../lib/page_parser.js');

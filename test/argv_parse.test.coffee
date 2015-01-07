@@ -1,6 +1,6 @@
 rewire = require('rewire')
 
-describe('argv parser', ->
+describe('argv parser module', ->
   argvParser = rewire('../lib/argv_parser.js')
   argvParser.__set__({
     console:

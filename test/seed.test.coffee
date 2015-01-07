@@ -1,6 +1,6 @@
 rewire = require('rewire')
 
-describe('seed', ->
+describe('seed module', ->
   seed = rewire('../lib/seed.js')
   seed.__set__({
     logger:
