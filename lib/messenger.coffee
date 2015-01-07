@@ -1,7 +1,7 @@
 util = require('util')
 request = require('request')
 config = require('./config.js')
-MANDATORY_PARSE_FIELDS = require('./page_parser.js').MANDATORY_FIELDS
+MANDATORY_PARSE_FIELDS = require('./page_parser.js').MANDATORY_OUTPUT_FIELDS
 SEED_BASE_FIELDS = require('./seed.js').MANDATORY_BASE_FIELDS
 
 assembleMessageTitle = (result) ->
@@ -28,8 +28,6 @@ assembleMessageBody = (result) ->
           body += util.format('  %s', item)
           return
         )
-      else if field == 'discount'
-        body += util.format('%s: %s\n', field, Math.round(result[field]))
       else
         body += util.format('%s: %s\n', field, result[field])
       return

@@ -15,15 +15,6 @@
       }
     },
     {
-      "id": "B00R3X3ZPE",
-      "site": "www.amazon.cn",
-      "comment": "sony a7ii full frame camera",
-      "instore": {
-        "compare": "equal",
-        "target": true
-      }
-    },
-    {
       "id": "B00CW8WZIS",
       "site": "www.amazon.cn",
       "comment": "wacom bamboo ctl-671",
@@ -33,9 +24,9 @@
       }
     },
     {
-      "id": "B008IZ8J9I",
+      "id": "B008IZ8MZO",
       "site": "www.amazon.cn",
-      "comment": "3m 9001v kn90 mask",
+      "comment": "3m 9002v kn90 mask",
       "discount": {
         "compare": "above",
         "target": 75

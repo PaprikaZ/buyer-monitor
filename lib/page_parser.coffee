@@ -2,11 +2,12 @@ config = require('./config.js')
 cheerio = require('cheerio')
 
 _MANDATORY_PARSE_FIELDS = ['title', 'price', 'fullPrice', 'review', 'instore', 'benefits']
-MANDATORY_FIELDS = ['title', 'price', 'fullPrice', 'discount', 'review', 'instore', 'benefits']
+_MANDATORY_EXPAND_FIELDS = ['discount']
+MANDATORY_OUTPUT_FIELDS = _MANDATORY_PARSE_FIELDS.concat(_MANDATORY_EXPAND_FIELDS)
 require('./seed.js').AVAILABLE_VERDICT_FIELDS.map((field) ->
-  if MANDATORY_FIELDS.indexOf(field) == -1
+  if MANDATORY_OUTPUT_FIELDS.indexOf(field) == -1
     console.error('seed verdict field %s is missing in page parser result', field)
-    throw new Error('missing seed verdict field')
+    throw new Error('design error, page parser output missing verdict field')
   return
 )
 
@@ -26,24 +27,25 @@ review =
 
 class Parser
   constructor: ->
-  load: cheerio.load
-  mandatoryParseFields: _MANDATORY_PARSE_FIELDS
-  mandatoryFields: MANDATORY_FIELDS
   parse: (html) ->
     self = @
-    $ = @load(html)
-    result = {}
-    @mandatoryParseFields.map((field) ->
-      result[field] = self[field]($)
-      return)
-    result.discount = (1 - result.price / result.fullPrice) * 100
+    $ = cheerio.load(html)
 
-    allFieldOk = @mandatoryParseFields.every((field) ->
-      return field != null)
-    if allFieldOk
-      return result
-    else
-      return logger.error('%s parse page failed', @constructor.name)
+    result = {}
+    _MANDATORY_PARSE_FIELDS.map((field) ->
+      result[field] = self[field]($)
+      return
+    )
+    result.discount = Math.round((1 - result.price / result.fullPrice) * 100)
+
+    console.log(result)
+    MANDATORY_OUTPUT_FIELDS.some((field) ->
+      return result[field] == '' or
+             result[field] != result[field] or
+             result[field] == -1
+    ) and
+      parseErrorHandler(@constructor.name)
+    return result
 
   title: (selector) ->
     return 'unknown'
@@ -97,24 +99,28 @@ class AmazonCNParser extends Parser
       return review.unknownStar
   instore: (selector) ->
     classes = selector('#ddmAvailabilityMessage').children().attr('class')
-    if /a-color-success/.test(classes)
-      return true
-    else
-      return false
+    return /a-color-success/.test(classes)
 
 class AmazonUSParser extends Parser
 class AmazonJPParser extends Parser
 class JingdongParser extends Parser
 
-module.exports.MANDATORY_FIELDS = MANDATORY_FIELDS
-module.exports.createParser = (site) ->
+parseErrorHandler = (parserName) ->
+  logger.error('%s parse failed', parserName)
+  throw new Error('parse error')
+
+invalidSiteHandler = (site) ->
+  logger.error('no available parser for site %s', site)
+  throw new Error('invalid data error, no available parser for invalid site')
+
+exports.MANDATORY_OUTPUT_FIELDS = MANDATORY_OUTPUT_FIELDS
+exports.createParser = (site) ->
   parser =
     switch site
       when 'www.amazon.cn' then new AmazonCNParser()
       when 'www.amazon.com' then new AmazonUSParser()
       when 'www.amazon.co.jp' then new AmazonJPParser()
       when 'www.jd.com' then new JingdongParser()
-      else
-        logger.error('no available page parser for site %s', site)
-        throw new Error('no available parser')
+      else invalidSiteHandler(site)
   return parser
+module.exports = exports
