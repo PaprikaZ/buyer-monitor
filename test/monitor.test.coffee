@@ -53,6 +53,36 @@ describe('monitor module', ->
     return
   )
 
+  describe('visit sites', ->
+    called = false
+    makeCalledTrue = ->
+      called = true
+      return
+    makeCalledFalse = ->
+      called = false
+      return
+    restore = null
+    beforeEach(->
+      makeCalledFalse()
+      restore = monitor.__set__({
+        createVisitor: -> {visit: ->}
+      })
+      return
+    )
+    afterEach(-> restore())
+
+    it('should not visit any site when all seeds delayed', ->
+      monitor.__set__({
+        createVisitor: -> {visit: makeCalledTrue}
+      })
+      m = createMonitor()
+      m.seeds = []
+      m.visitSites()
+      called.should.be.false
+      return
+    )
+    return
+  )
   describe('process delay queue', ->
     makeRpop = (queue) ->
       return (key, callback) ->
@@ -72,30 +102,13 @@ describe('monitor module', ->
     beforeEach(->
       makeCalledFalse()
       restore = monitor.__set__({
-        setInterval: ->
         setTimeout: ->
         db:
           getClient: -> {rpop: ->}
-        createVisitor: -> {visit: ->}
       })
       return
     )
     afterEach(-> restore())
-
-    it('should visit sites after delay queue cleared ', ->
-      v = verdicts.slice().pop()
-      queue = [JSON.stringify({id: v.id, site: v.site})]
-      monitor.__set__({
-        db:
-          getClient: -> {rpop: makeRpop(queue)}
-      })
-      m = createMonitor()
-      m.visitSites = makeCalledTrue
-      m.processDelayQueue()
-      queue.should.be.empty
-      called.should.be.true
-      return
-    )
 
     it('should bypass database error', ->
       monitor.__set__({
@@ -104,22 +117,6 @@ describe('monitor module', ->
       })
       m = createMonitor()
       m.processDelayQueue.bind(m).should.throw('foo')
-      return
-    )
-
-    it('should not visit any site when all seeds delayed', ->
-      queue = verdicts
-        .map((v) -> {id: v.id, site: v.site})
-        .map((v) -> JSON.stringify(v))
-      monitor.__set__({
-        db:
-          getClient: -> {rpop: makeRpop(queue)}
-        createVisitor: ->
-          makeCalledTrue()
-          return {visit: ->}
-      })
-      createMonitor().processDelayQueue()
-      called.should.be.false
       return
     )
 
@@ -168,8 +165,6 @@ describe('monitor module', ->
     beforeEach(->
       makeCalledFalse()
       restore = monitor.__set__({
-        setInterval: ->
-        setTimeout: ->
         db:
           getClient: -> {rpop: ->}
         messenger:

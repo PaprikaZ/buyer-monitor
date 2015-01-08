@@ -81,6 +81,44 @@ describe('monitor module', function() {
       restore();
     });
   });
+  describe('visit sites', function() {
+    var called, makeCalledFalse, makeCalledTrue, restore;
+    called = false;
+    makeCalledTrue = function() {
+      called = true;
+    };
+    makeCalledFalse = function() {
+      called = false;
+    };
+    restore = null;
+    beforeEach(function() {
+      makeCalledFalse();
+      restore = monitor.__set__({
+        createVisitor: function() {
+          return {
+            visit: function() {}
+          };
+        }
+      });
+    });
+    afterEach(function() {
+      return restore();
+    });
+    it('should not visit any site when all seeds delayed', function() {
+      var m;
+      monitor.__set__({
+        createVisitor: function() {
+          return {
+            visit: makeCalledTrue
+          };
+        }
+      });
+      m = createMonitor();
+      m.seeds = [];
+      m.visitSites();
+      called.should.be["false"];
+    });
+  });
   describe('process delay queue', function() {
     var called, makeCalledFalse, makeCalledTrue, makeRpop, restore;
     makeRpop = function(queue) {
@@ -103,7 +141,6 @@ describe('monitor module', function() {
     beforeEach(function() {
       makeCalledFalse();
       restore = monitor.__set__({
-        setInterval: function() {},
         setTimeout: function() {},
         db: {
           getClient: function() {
@@ -111,40 +148,11 @@ describe('monitor module', function() {
               rpop: function() {}
             };
           }
-        },
-        createVisitor: function() {
-          return {
-            visit: function() {}
-          };
         }
       });
     });
     afterEach(function() {
       return restore();
-    });
-    it('should visit sites after delay queue cleared ', function() {
-      var m, queue, v;
-      v = verdicts.slice().pop();
-      queue = [
-        JSON.stringify({
-          id: v.id,
-          site: v.site
-        })
-      ];
-      monitor.__set__({
-        db: {
-          getClient: function() {
-            return {
-              rpop: makeRpop(queue)
-            };
-          }
-        }
-      });
-      m = createMonitor();
-      m.visitSites = makeCalledTrue;
-      m.processDelayQueue();
-      queue.should.be.empty;
-      called.should.be["true"];
     });
     it('should bypass database error', function() {
       var m;
@@ -161,34 +169,6 @@ describe('monitor module', function() {
       });
       m = createMonitor();
       m.processDelayQueue.bind(m).should["throw"]('foo');
-    });
-    it('should not visit any site when all seeds delayed', function() {
-      var queue;
-      queue = verdicts.map(function(v) {
-        return {
-          id: v.id,
-          site: v.site
-        };
-      }).map(function(v) {
-        return JSON.stringify(v);
-      });
-      monitor.__set__({
-        db: {
-          getClient: function() {
-            return {
-              rpop: makeRpop(queue)
-            };
-          }
-        },
-        createVisitor: function() {
-          makeCalledTrue();
-          return {
-            visit: function() {}
-          };
-        }
-      });
-      createMonitor().processDelayQueue();
-      called.should.be["false"];
     });
     it('should push back delayed seeds when timeout', function() {
       var m, queue, remainingVdts, v, vdts;
@@ -249,8 +229,6 @@ describe('monitor module', function() {
     beforeEach(function() {
       makeCalledFalse();
       restore = monitor.__set__({
-        setInterval: function() {},
-        setTimeout: function() {},
         db: {
           getClient: function() {
             return {

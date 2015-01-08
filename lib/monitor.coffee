@@ -32,6 +32,10 @@ class Monitor
       throw new Error('config error, verdicts empty')
     logger.debug('load seeds ok.')
 
+  visitSites: ->
+    0 < @seeds.length and @seeds.map((seed) -> createVisitor(seed).visit())
+    return
+
   delaySeed: (id, site) ->
     self = @
 
@@ -44,15 +48,11 @@ class Monitor
         return
       )
       debugMsg += ' delayed'
-      logger.info(debugMsg)
+      logger.debug(debugMsg)
 
       setTimeout((-> self.seeds.push(s)), config.resendDelay)
       return
     )
-    return
-
-  visitSites: ->
-    0 < @seeds.length and @seeds.map((seed) -> createVisitor(seed).visit())
     return
 
   processDelayQueue: ->
@@ -67,7 +67,6 @@ class Monitor
             iter()
           else
             logger.debug('processing delay queue done')
-            self.visitSites()
         else
           databaseErrorHandler(err)
         return
@@ -77,6 +76,7 @@ class Monitor
     return
 
   pushMessages: (results) ->
+    self = @
     results.map((result) ->
       self.accessTokens.map((token) -> messenger.push(result, token)))
     return
@@ -84,8 +84,8 @@ class Monitor
   processPushQueue: ->
     self = @
 
+    results = []
     iter = ->
-      results = []
       self.client.rpop(config.redisPushQueueKey, (err, res) ->
         if not err
           if res
@@ -105,8 +105,9 @@ class Monitor
   startMonitoring: ->
     self = @
 
-    self.processDelayQueue()
-    setInterval((-> self.processDelayQueue()), config.monitorInterval)
+    self.visitSites()
+    setInterval((-> self.processDelayQueue()), config.pollInterval)
+    setInterval((-> self.visitSites()), config.monitorInterval)
     setInterval((-> self.processPushQueue()), config.pushInterval)
     return
 
