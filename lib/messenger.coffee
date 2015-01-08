@@ -87,4 +87,5 @@ requestErrorHandler = (token, err) ->
   logger.error('%s, error %s', token, err.message)
   throw err
 
-module.exports = exports = push
+exports.push = push
+module.exports = exports
