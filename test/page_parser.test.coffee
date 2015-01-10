@@ -108,10 +108,15 @@ describe('page parser module', ->
     )
     return
 
-  createSiteDescribe('amazon cn', /amazon\.cn/, 'www.amazon.cn')
-  createSiteDescribe('amazon us', /amazon\.com/, 'www.amazon.com')
-  createSiteDescribe('amazon jp', /amazon\.co\.jp/, 'www.amazon.co.jp')
-  createSiteDescribe('jingdong', /jd\.com/, 'www.jd.com')
+  createSiteDescribe('amazon cn parser', /amazon\.cn/, 'www.amazon.cn')
+  createSiteDescribe('amazon us parser', /amazon\.com/, 'www.amazon.com')
+  createSiteDescribe('amazon jp parser', /amazon\.co\.jp/, 'www.amazon.co.jp')
+  createSiteDescribe('jingdong parser', /jd\.com/, 'www.jd.com')
+
+  describe('amazon cn parser parse', ->
+    it('should treat full price zero when it is not available')
+    return
+  )
 
   describe('parse error handler', ->
     parseErrorHandler = pageParser.__get__('parseErrorHandler')

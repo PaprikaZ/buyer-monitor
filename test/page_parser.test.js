@@ -108,10 +108,13 @@ describe('page parser module', function() {
       }
     });
   };
-  createSiteDescribe('amazon cn', /amazon\.cn/, 'www.amazon.cn');
-  createSiteDescribe('amazon us', /amazon\.com/, 'www.amazon.com');
-  createSiteDescribe('amazon jp', /amazon\.co\.jp/, 'www.amazon.co.jp');
-  createSiteDescribe('jingdong', /jd\.com/, 'www.jd.com');
+  createSiteDescribe('amazon cn parser', /amazon\.cn/, 'www.amazon.cn');
+  createSiteDescribe('amazon us parser', /amazon\.com/, 'www.amazon.com');
+  createSiteDescribe('amazon jp parser', /amazon\.co\.jp/, 'www.amazon.co.jp');
+  createSiteDescribe('jingdong parser', /jd\.com/, 'www.jd.com');
+  describe('amazon cn parser parse', function() {
+    it('should treat full price zero when it is not available');
+  });
   describe('parse error handler', function() {
     var parseErrorHandler;
     parseErrorHandler = pageParser.__get__('parseErrorHandler');

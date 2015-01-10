@@ -31,6 +31,15 @@
         "compare": "above",
         "target": 75
       }
+    },
+    {
+      "id": "B00JGIEKOE",
+      "site": "www.amazon.cn",
+      "comment": "new balance MRL996CT size 43",
+      "price": {
+        "compare": "under",
+        "target": 450
+      }
     }
     ]
 }

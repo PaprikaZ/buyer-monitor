@@ -36,12 +36,13 @@ class Parser
       result[field] = self[field]($)
       return
     )
-    result.discount = Math.round((1 - result.price / result.fullPrice) * 100)
+    result.discount = @generateDiscount(result.price, result.fullPrice)
 
     MANDATORY_OUTPUT_FIELDS.some((field) ->
       return result[field] == '' or
              result[field] != result[field] or
-             result[field] == -1
+             result[field] == -1 or
+             result[field] < 0
     ) and
       parseErrorHandler(@constructor.name)
     return result
@@ -55,9 +56,14 @@ class Parser
   review: (selector) ->
     return review.unknownStar
   instore: (selector) ->
-    return false
+    return -1
   benefits: (selector) ->
-    return []
+    return ['foo']
+  generateDiscount: (price, fullPrice) ->
+    if fullPrice == 0
+      return 0
+    else
+      return Math.round((1 - price / fullPrice) * 100)
 
 class AmazonCNParser extends Parser
   title: (selector) ->
@@ -67,8 +73,13 @@ class AmazonCNParser extends Parser
   price: (selector) ->
     return @priceToInt(selector('#priceblock_ourprice').text())
   fullPrice: (selector) ->
-    return @priceToInt(selector('#priceblock_ourprice').parent().parent()
-      .parent().children().first().children().last().text())
+    p = @priceToInt(selector('#priceblock_ourprice').parent().parent()
+          .parent().children().first().children().last().text())
+    if p != p
+      return 0
+    else
+      return p
+
   review: (selector) ->
     classes = selector('#acrPopover').children().children()
       .children('.a-icon-star').attr('class')
