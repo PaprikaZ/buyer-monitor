@@ -1,8 +1,5 @@
+site = require('./site.js')
 config = require('./config.js')
-
-httpPrefix = 'http://'
-httpsPrefix = 'https://'
-htmlSuffix = '.html'
 
 MANDATORY_BASE_FIELDS = ['id', 'site']
 AVAILABLE_VERDICT_FIELDS = ['price', 'discount', 'instore', 'review', 'benefits']
@@ -11,46 +8,12 @@ _AVAILABLE_VERDICT_METHODS = AVAILABLE_VERDICT_FIELDS.map((field) ->
   return 'verdict' + field.slice(0, 1).toUpperCase() + field.substring(1)
 )
 
-siteTable =
-  amazonCN: {
-    site: 'www.amazon.cn'
-    generateProductUrl: (productId) ->
-      return httpPrefix + @site + '/dp/' + productId
-  }
-  amazonUS: {
-    site: 'www.amazon.com'
-    generateProductUrl: (productId) ->
-      return httpPrefix + @site + '/dp/' + productId
-  }
-  amazonJP: {
-    site: 'www.amazon.co.jp'
-    generateProductUrl: (productId) ->
-      return httpPrefix + @site + '/dp/' + productId
-  }
-  jingdong: {
-    site: 'www.jd.com'
-    generateProductUrl: (productId) ->
-      return httpPrefix + @site.replace('www', 'item') + '/' + \
-             productId + htmlSuffix
-  }
-
-generateProductUrl = (id, site) ->
-  matchedItems = (self for _, self of siteTable when self.site == site)
-  if 0 < matchedItems.length
-    return matchedItems.pop().generateProductUrl(id)
-  else
-    siteNotSupportHandler(site)
-  return
-
 _FIELDS_EXPAND_TABLE =
-  url: generateProductUrl
+  url: site.generateProductUrl
+  encoding: site.getSiteEncoding
 MANDATORY_EXPAND_FIELDS = []
 for field, expand of _FIELDS_EXPAND_TABLE
   MANDATORY_EXPAND_FIELDS.push(field)
-
-siteNotSupportHandler = (site) ->
-  logger.error('site %s is not support yet', site)
-  throw new Error('value not support error, verdict site')
 
 illegalTypeHandler = (id, site, field) ->
   logger.error('id %s site %s %s verdict with a illegal value', id, site, field)
@@ -130,7 +93,6 @@ class Seed
     )
 
 exports.Seed = Seed
-exports.generateProductUrl = generateProductUrl
 exports.MANDATORY_BASE_FIELDS = MANDATORY_BASE_FIELDS
 exports.MANDATORY_EXPAND_FIELDS = MANDATORY_EXPAND_FIELDS
 exports.AVAILABLE_VERDICT_FIELDS = AVAILABLE_VERDICT_FIELDS
