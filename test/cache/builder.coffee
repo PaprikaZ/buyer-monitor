@@ -3,7 +3,9 @@ path = require('path')
 crypto = require('crypto')
 request = require('request')
 mkdirp = require('mkdirp')
+iconv = require('iconv-lite')
 seed = require('../../lib/seed.js')
+site = require('../../lib/site.js')
 htmlTableFile = path.join(__dirname, './html.json')
 
 configFile = path.join(__dirname, './config.json')
@@ -20,7 +22,7 @@ cacheItemToProduct = (item) ->
 
   seed.MANDATORY_BASE_FIELDS.map(mountField)
   config.extraFields.map(mountField)
-  product.url = seed.generateProductUrl(product.id, product.site)
+  product.url = site.generateProductUrl(product.id, product.site)
   return product
 
 cacheItemToVerdict = (item) ->
@@ -70,7 +72,8 @@ build = ->
         md5sum = crypto.createHash(hashAlgorithm)
         fileName = md5sum.update(url).digest(digestEncoding) + '.html'
         filePath = path.join(htmlDirectory, fileName)
-        fs.writeFileSync(filePath, body)
+        encoding = site.getSiteEncoding(site.urlToSite(url))
+        fs.writeFileSync(filePath, iconv.decode(new Buffer(body), encoding))
         urlToHtmlTable[url] = filePath
       else if err
         console.error('build html cache caught error')
@@ -92,7 +95,10 @@ build = ->
   requestCallback = makeRequestCallback()
 
   requestWrapper = (url, callback) ->
-    request(url, (err, res, body) -> callback(err, res, body, url))
+    request.get(
+      {url: url, encoding: null},
+      (err, res, body) -> callback(err, res, body, url)
+    )
 
   products.map((item) -> item.url).map((url) ->
     requestWrapper(url, requestCallback)
