@@ -38,7 +38,6 @@ describe('seed module', function() {
     beforeEach(function() {
       makeCalledFalse();
       restore = seed.__set__({
-        siteNotSupportHandler: function() {},
         illegalTypeHandler: function() {},
         verdictMissingHandler: function() {},
         noneVerdictLoadedHandler: function() {}
@@ -90,22 +89,6 @@ describe('seed module', function() {
       verdictMethods.some(function(method) {
         return typeof s[method] === 'function';
       }).should.be["true"];
-    });
-    it('should route to site not support handler when site not in support list', function() {
-      var product, s;
-      product = {
-        id: testID,
-        site: unknownSite,
-        price: {
-          compare: priceCompare,
-          target: testPrice
-        }
-      };
-      seed.__set__({
-        siteNotSupportHandler: makeCalledTrue
-      });
-      s = new Seed(product);
-      called.should.be["true"];
     });
     it('should route to illegal type handler when detect not a number', function() {
       var product, s;
@@ -315,13 +298,6 @@ describe('seed module', function() {
     verdictMissingHandler = seed.__get__('verdictMissingHandler');
     it('should throw error', function() {
       verdictMissingHandler.bind(null, testID, knownSite).should["throw"]('value missing error, non verdict fields specified');
-    });
-  });
-  describe('site not support handler', function() {
-    var siteNotSupportHandler;
-    siteNotSupportHandler = seed.__get__('siteNotSupportHandler');
-    it('should throw error', function() {
-      siteNotSupportHandler.bind(null, unknownSite).should["throw"]('value not support error, verdict site');
     });
   });
   describe('illegal type handler', function() {

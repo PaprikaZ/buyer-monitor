@@ -34,7 +34,6 @@ describe('seed module', ->
     beforeEach(->
       makeCalledFalse()
       restore = seed.__set__({
-        siteNotSupportHandler: ->
         illegalTypeHandler: ->
         verdictMissingHandler: ->
         noneVerdictLoadedHandler: ->
@@ -81,21 +80,6 @@ describe('seed module', ->
       verdictMethods.some((method) ->
         return (typeof(s[method]) == 'function')
       ).should.be.true
-      return
-    )
-
-    it('should route to site not support handler when site not in support list', ->
-      product =
-        id: testID
-        site: unknownSite
-        price:
-          compare: priceCompare
-          target: testPrice
-      seed.__set__({
-        siteNotSupportHandler: makeCalledTrue
-      })
-      s = new Seed(product)
-      called.should.be.true
       return
     )
 
@@ -292,16 +276,6 @@ describe('seed module', ->
     it('should throw error', ->
       verdictMissingHandler.bind(null, testID, knownSite)
         .should.throw('value missing error, non verdict fields specified')
-      return
-    )
-    return
-  )
-
-  describe('site not support handler', ->
-    siteNotSupportHandler = seed.__get__('siteNotSupportHandler')
-    it('should throw error', ->
-      siteNotSupportHandler.bind(null, unknownSite)
-        .should.throw('value not support error, verdict site')
       return
     )
     return
