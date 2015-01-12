@@ -40,6 +40,105 @@
         "compare": "under",
         "target": 450
       }
+    },
+    {
+      "id": "B00OBRE5UE",
+      "site": "www.amazon.com",
+      "comment": "samsung 850 evo 500gb 2.5 inch ssd",
+      "price": {
+        "compare": "under",
+        "target": 200
+      }
+    },
+    {
+      "id": "B00LF10KTO",
+      "site": "www.amazon.com",
+      "comment": "samsung 850 pro 512gb 2.5 inch ssd",
+      "price": {
+        "compare": "under",
+        "target": 250
+      }
+    },
+    {
+      "id": "B00IRRDHVW",
+      "site": "www.amazon.com",
+      "comment": "crucial m550 512gb 2.5 inch ssd",
+      "price": {
+        "compare": "under",
+        "target": 200
+      }
+    },
+    {
+      "id": "B00KFAGCUM",
+      "site": "www.amazon.com",
+      "comment": "crucial mx100 512gb 2.5 inch ssd",
+      "price": {
+        "comapre": "under",
+        "target": 180
+      }
+    },
+    {
+      "id": "1268447",
+      "site": "www.jd.com",
+      "comment": "dell ultrasharp u2415 24 inch monitor",
+      "price": {
+        "compare": "under",
+        "target": 1800
+      }
+    },
+    {
+      "id": "686434",
+      "site": "www.jd.com",
+      "comment": "team ddr3 1600mhz 8gb pc sdram",
+      "price": {
+        "compare": "under",
+        "target": 300
+      }
+    },
+    {
+      "id": "1134326",
+      "site": "www.jd.com",
+      "comment": "kirin 500ml x6 first wort orignal beer",
+      "price": {
+        "compare": "under",
+        "target": 25
+      }
+    },
+    {
+      "id": "987412",
+      "site": "www.jd.com",
+      "comment": "harbin 500ml x18 wheet king beer",
+      "price": {
+        "compare": "under",
+        "target": 70
+      }
+    },
+    {
+      "id": "987414",
+      "site": "www.jd.com",
+      "comment": "harbin 500ml x18 pure ice beer",
+      "price": {
+        "compare": "under",
+        "target": 72
+      }
+    },
+    {
+      "id": "846591",
+      "site": "www.jd.com",
+      "comment": "olympus silver m.zuiko digital 17mm f1.8 premium prime lens",
+      "price": {
+        "compare": "under",
+        "target": 2000
+      }
+    },
+    {
+      "id": "1134520",
+      "site": "www.jd.com",
+      "comment": "olympus silver m.zuiko digital 25mm f1.8 premium prime lens",
+      "price": {
+        "compare": "under",
+        "target": 1800
+      }
     }
     ]
 }
