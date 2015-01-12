@@ -38,6 +38,7 @@ class Parser
     )
     result.discount = @generateDiscount(result.price, result.fullPrice)
 
+    console.log(result)
     MANDATORY_OUTPUT_FIELDS.some((field) ->
       return result[field] == '' or
              result[field] != result[field] or
@@ -65,7 +66,7 @@ class Parser
     else
       return Math.round((1 - price / fullPrice) * 100)
 
-class AmazonCNParser extends Parser
+class AmazonParser extends Parser
   title: (selector) ->
     return selector('#productTitle').text()
   priceToInt: (text) ->
@@ -79,41 +80,65 @@ class AmazonCNParser extends Parser
       return 0
     else
       return p
-
   review: (selector) ->
     classes = selector('#acrPopover').children().children()
       .children('.a-icon-star').attr('class')
-    if /a-star-5/.test(classes)
-      return review.fiveStar
-    else if /a-star-4-5/.test(classes)
-      return review.fourHalfStar
-    else if /a-star-4/.test(classes)
-      return review.fourStar
-    else if /a-star-3-5/.test(classes)
-      return review.threeStar
-    else if /a-star-3/.test(classes)
-      return review.threeStar
-    else if /a-star-2-5/.test(classes)
-      return review.twoHalfStar
-    else if /a-star-2/.test(classes)
-      return review.twoStar
-    else if /a-star-1-5/.test(classes)
-      return review.oneHalfStar
-    else if /a-star-1/.test(classes)
-      return review.oneStar
-    else if /a-star-0-5/.test(classes)
-      return review.halfStar
-    else if /a-star-0/.test(classes)
-      return review.zeroStar
-    else
-      return review.unknownStar
+    return switch
+      when /a-star-5/.test(classes) then review.fiveStar
+      when /a-star-4-5/.test(classes) then review.fourHalfStar
+      when /a-star-4/.test(classes) then review.fourStar
+      when /a-star-3-5/.test(classes) then review.threeHalfStar
+      when /a-star-3/.test(classes) then review.threeStar
+      when /a-star-2-5/.test(classes) then review.twoHalfStar
+      when /a-star-2/.test(classes) then review.twoStar
+      when /a-star-1-5/.test(classes) then review.oneHalfStar
+      when /a-star-1/.test(classes) then review.oneStar
+      when /a-star-0-5/.test(classes) then review.halfStar
+      when /a-star-0/.test(classes) then review.zeroStar
+      else review.unknownStar
+  benefits: -> ['bar']
+
+class AmazonCNParser extends AmazonParser
   instore: (selector) ->
     classes = selector('#ddmAvailabilityMessage').children().attr('class')
     return /a-color-success/.test(classes)
 
-class AmazonUSParser extends Parser
-class AmazonJPParser extends Parser
+class AmazonUSParser extends AmazonParser
+  instore: (selector) ->
+    classes = selector('#availability').children().attr('class')
+    return /a-color-success/.test(classes)
+
+class AmazonJPParser extends AmazonParser
 class JingdongParser extends Parser
+  title: (selector) ->
+    return selector('#name h1').text()
+  price: (selector) ->
+    return selector('#jd-price').text()
+  fullPrice: (selector) ->
+    return 0
+  review: (selector) ->
+    rate = selector('.rate strong').text()
+    score = parseInt(rate.slice(0, rate.length - 1))
+    return switch
+      when 95 < score < 101 then review.fiveStar
+      when 85 < score then review.fourHalfStar
+      when 75 < score then review.fourStar
+      when 65 < score then review.threeHalfStar
+      when 55 < score then review.threeStar
+      when 45 < score then review.twoHalfStar
+      when 35 < score then review.twoStar
+      when 25 < score then review.oneHalfStar
+      when 15 < score then review.oneStar
+      when 5 < score then review.halfStar
+      when -1 < score then review.zeroStar
+      else review.unknownStar
+  instore: (selector) ->
+    storePrompt = selector('#store-prompt strong').text()
+    return switch
+      when '有货' then true
+      when '无货' then false
+      else -1
+  benefits: -> ['bar']
 
 parseErrorHandler = (parserName) ->
   logger.error('%s parse failed', parserName)
