@@ -96,7 +96,10 @@ describe('page parser module', ->
               _MANDATORY_PARSE_FIELDS.map((field) ->
                 defaultValue = defaultParser[field]()
                 siteValue = result[field]
-                siteValue.should.not.equal(defaultValue)
+                if Array.isArray(siteValue)
+                  siteValue.should.not.eql(defaultValue)
+                else
+                  siteValue.should.not.equal(defaultValue)
                 return
               )
               return

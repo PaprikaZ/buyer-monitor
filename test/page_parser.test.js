@@ -98,7 +98,11 @@ describe('page parser module', function() {
                 var defaultValue, siteValue;
                 defaultValue = defaultParser[field]();
                 siteValue = result[field];
-                siteValue.should.not.equal(defaultValue);
+                if (Array.isArray(siteValue)) {
+                  siteValue.should.not.eql(defaultValue);
+                } else {
+                  siteValue.should.not.equal(defaultValue);
+                }
               });
             };
           })(html));
