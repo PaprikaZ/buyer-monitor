@@ -1,3 +1,4 @@
 node_modules
 test/cache/html.json
 test/html
+casperjs
