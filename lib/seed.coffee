@@ -10,7 +10,7 @@ _AVAILABLE_VERDICT_METHODS = AVAILABLE_VERDICT_FIELDS.map((field) ->
 
 _FIELDS_EXPAND_TABLE =
   url: site.generateProductUrl
-  encoding: site.getSiteEncoding
+  encoding: (i, s) -> site.getSiteEncoding(s)
 MANDATORY_EXPAND_FIELDS = []
 for field, expand of _FIELDS_EXPAND_TABLE
   MANDATORY_EXPAND_FIELDS.push(field)
