@@ -1,5 +1,6 @@
 request = require('request')
 util = require('util')
+iconv = require('iconv-lite')
 config = require('./config.js')
 s = require('./seed.js')
 MANDATORY_EXPAND_FIELDS = s.MANDATORY_EXPAND_FIELDS
@@ -14,10 +15,13 @@ class Visitor
 
   visit: ->
     self = this
-    request.get(self.seed.url, (err, res, body) ->
+    request.get({
+      url: self.seed.url
+      encoding: null
+    }, (err, res, body) ->
       if not err
         if res.statusCode == 200
-          self.processPage(body)
+          self.processPage(iconv.decode(new Buffer(body, self.seed.encoding)))
         else
           responseErrorHandler(self.constructor, res, body)
       else
