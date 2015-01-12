@@ -21,7 +21,7 @@ class Visitor
     }, (err, res, body) ->
       if not err
         if res.statusCode == 200
-          self.processPage(iconv.decode(new Buffer(body, self.seed.encoding)))
+          self.processPage(iconv.decode(new Buffer(body), self.seed.encoding))
         else
           responseErrorHandler(self.constructor, res, body)
       else
