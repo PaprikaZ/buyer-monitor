@@ -32,26 +32,6 @@ exports.getClient = ->
     logger.debug('database client should be created just after monitor launched')
     throw new Error('client not initialized')
 
-exports.clearQueue = ->
-  client.del(config.redisPushQueueKey, (err, res) ->
-    if err
-      logger.error('clear push queue %s failed', config.redisPushQueueKey)
-      logger.error('%s', err.message)
-      throw err
-    else
-      logger.debug('clear push queue response: %s', res)
-    return
-  )
-
-  client.del(config.redisPullQueueKey, (err, res) ->
-    if err
-      logger.error('clear pull queue %s failed', config.redisPullQueueKey)
-      logger.error('%s', err.message)
-      throw err
-    else
-      logger.debug('clear pull queue response: %s', res)
-    return
-  )
-  return
+exports.clearQueue = -> client.flushdb()
 exports.redisErrorRethrow = redisErrorRethrow
 module.exports = exports
