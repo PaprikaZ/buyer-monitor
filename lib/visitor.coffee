@@ -23,9 +23,9 @@ class Visitor
         if res.statusCode == 200
           self.processPage(iconv.decode(new Buffer(body), self.seed.encoding))
         else
-          responseErrorHandler(self.constructor, res, body)
+          responseErrorHandler(self.constructor.name, res, body)
       else
-        requestErrorHandler(self.constructor, self.seed.url, err)
+        requestErrorHandler(self.constructor.name, self.seed.url, err)
       return
     )
     return
@@ -77,17 +77,17 @@ class AmazonUSVisitor extends Visitor
 class AmazonJPVisitor extends Visitor
 class JingDongVisitor extends Visitor
 
-requestErrorHandler = (visitor, url, err) ->
-  logger.error('%s get request failed', visitor)
-  logger.error('%s url: %s', visitor, url)
-  logger.error('%s err: %s', visitor, err.message)
+requestErrorHandler = (visitorName, url, err) ->
+  logger.error('%s get request failed', visitorName)
+  logger.error('%s url: %s', visitorName, url)
+  logger.error('%s err: %s', visitorName, err.message)
   throw err
 
-responseErrorHandler = (visitor, res, body) ->
-  logger.error('%s response error', visitor)
-  logger.error('%s url: %s', visitor, res.url)
-  logger.error('%s status code: %s', visitor, res.statusCode)
-  logger.error('%s body: %s', visitor, body)
+responseErrorHandler = (visitorName, res, body) ->
+  logger.error('%s response error', visitorName)
+  logger.error('%s url: %s', visitorName, res.url)
+  logger.error('%s status code: %s', visitorName, res.statusCode)
+  logger.error('%s body: %s', visitorName, body)
   return
 
 invalidSiteHandler = (site) ->
