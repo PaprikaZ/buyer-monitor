@@ -11,11 +11,6 @@ Seed = s.Seed
 MANDATORY_BASE_FIELDS = s.MANDATORY_BASE_FIELDS
 verdictsFileName = path.join(__dirname, '../', config.verdictsFileName)
 
-databaseErrorHandler = (err) ->
-  logger.error('database module caught error')
-  logger.error('db error: %s', err.message)
-  throw err
-
 class Monitor
   constructor: ->
     @client = db.getClient()
@@ -68,7 +63,7 @@ class Monitor
           else
             logger.debug('processing delay queue done')
         else
-          databaseErrorHandler(err)
+          db.redisErrorRethrow(err)
         return
       )
       return
@@ -95,7 +90,7 @@ class Monitor
             logger.debug('fetch push queue done')
             self.pushMessages(results)
         else
-          databaseErrorHandler(err)
+          db.redisErrorRethrow(err)
         return
       )
       return

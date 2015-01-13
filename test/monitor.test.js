@@ -154,7 +154,7 @@ describe('monitor module', function() {
     afterEach(function() {
       return restore();
     });
-    it('should bypass database error', function() {
+    it('should pass error to db rethrow handler', function() {
       var m;
       monitor.__set__({
         db: {
@@ -164,11 +164,13 @@ describe('monitor module', function() {
                 return callback(new Error('foo'));
               }
             };
-          }
+          },
+          redisErrorRethrow: makeCalledTrue
         }
       });
       m = createMonitor();
-      m.processDelayQueue.bind(m).should["throw"]('foo');
+      m.processDelayQueue();
+      called.should.be["true"];
     });
     it('should push back delayed seeds when timeout', function() {
       var m, queue, remainingVdts, v, vdts;
@@ -260,7 +262,7 @@ describe('monitor module', function() {
       m.processPushQueue();
       called.should.be["true"];
     });
-    it('should bypass database error', function() {
+    it('should pass error to db rethrow handler', function() {
       var m;
       monitor.__set__({
         db: {
@@ -270,11 +272,13 @@ describe('monitor module', function() {
                 return callback(new Error('foo'));
               }
             };
-          }
+          },
+          redisErrorRethrow: makeCalledTrue
         }
       });
       m = createMonitor();
-      m.processPushQueue.bind(m).should["throw"]('foo');
+      m.processPushQueue();
+      called.should.be["true"];
     });
     it('should not push any message when push queue empty', function() {
       var m;

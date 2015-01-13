@@ -47,11 +47,14 @@ class Visitor
         delayMsg[field] = result[field]
         return
       )
-      @client.lpush(config.redisDelayQueueKey, JSON.stringify(delayMsg))
-      @client.lpush(config.redisPushQueueKey, JSON.stringify(result))
+      @client.lpush(config.redisDelayQueueKey, JSON.stringify(delayMsg),
+        (err) -> err and db.redisErrorRethrow(err))
+      @client.lpush(config.redisPushQueueKey, JSON.stringify(result),
+        (err) -> err and db.redisErrorRethrow(err))
 
     result.date = date.toUTCString()
-    @client.lpush(config.redisHistoryKey, JSON.stringify(result))
+    @client.lpush(config.redisHistoryKey, JSON.stringify(result),
+      (err) -> err and db.redisErrorRethrow(err))
     return
 
   parsePage: (html) ->

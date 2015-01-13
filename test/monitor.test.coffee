@@ -110,13 +110,15 @@ describe('monitor module', ->
     )
     afterEach(-> restore())
 
-    it('should bypass database error', ->
+    it('should pass error to db rethrow handler', ->
       monitor.__set__({
         db:
           getClient: -> {rpop: (key, callback) -> callback(new Error('foo'))}
+          redisErrorRethrow: makeCalledTrue
       })
       m = createMonitor()
-      m.processDelayQueue.bind(m).should.throw('foo')
+      m.processDelayQueue()
+      called.should.be.true
       return
     )
 
@@ -186,13 +188,15 @@ describe('monitor module', ->
       return
     )
 
-    it('should bypass database error', ->
+    it('should pass error to db rethrow handler', ->
       monitor.__set__({
         db:
           getClient: -> {rpop: (key, callback) -> callback(new Error('foo'))}
+          redisErrorRethrow: makeCalledTrue
       })
       m = createMonitor()
-      m.processPushQueue.bind(m).should.throw('foo')
+      m.processPushQueue()
+      called.should.be.true
       return
     )
 
