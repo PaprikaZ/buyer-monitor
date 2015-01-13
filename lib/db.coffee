@@ -4,19 +4,24 @@ redisRecordDBIndex = config.redisRecordDBIndex
 
 client = null
 
+redisErrorRethrow = (err) ->
+  logger.error('redis database caught error')
+  logger.error('msg: %s', err.message)
+  throw err
+
 exports.createClient = ->
   client = redis.createClient(config.redisPort, config.redisHost)
   client.select(redisRecordDBIndex, (err, res) ->
     if err
       logger.error('redis select %s failed', redisRecordDBIndex)
-      throw err
+      redisErrorRethrow(err)
     else
       logger.debug('redis select %s %s', redisRecordDBIndex, res)
     return
   )
   client.on('error', (err) ->
-    logger.error('visitor record client caught error')
-    throw err
+    redisErrorRethrow(err)
+    return
   )
   return
 
@@ -48,4 +53,5 @@ exports.clearQueue = ->
     return
   )
   return
+exports.redisErrorRethrow = redisErrorRethrow
 module.exports = exports
