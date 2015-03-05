@@ -433,7 +433,8 @@ describe('argv parser module', function() {
             once: function(ev, callback) {
               makeUserInputDoneTrue();
               ev === 'data' && callback('yes');
-            }
+            },
+            emit: function() {}
           },
           stdout: {
             write: function() {}
@@ -466,7 +467,8 @@ describe('argv parser module', function() {
             once: function(ev, callback) {
               makeUserInputDoneTrue();
               ev === 'data' && callback('no');
-            }
+            },
+            emit: function() {}
           },
           stdout: {
             write: function() {}
@@ -487,7 +489,8 @@ describe('argv parser module', function() {
             once: function(ev, callback) {
               makeUserInputDoneTrue();
               ev === 'data' && callback('foo');
-            }
+            },
+            emit: function() {}
           },
           stdout: {
             write: function() {}

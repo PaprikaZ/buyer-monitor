@@ -532,6 +532,7 @@ describe('argv parser module', ->
               makeUserInputDoneTrue()
               ev == 'data' and callback('yes')
               return
+            emit: ->
           stdout:
             write: ->
         invalidResponseHandler: ->
@@ -563,6 +564,7 @@ describe('argv parser module', ->
               makeUserInputDoneTrue()
               ev == 'data' and callback('no')
               return
+            emit: ->
           stdout:
             write: ->
       })
@@ -582,6 +584,7 @@ describe('argv parser module', ->
               makeUserInputDoneTrue()
               ev == 'data' and callback('foo')
               return
+            emit: ->
           stdout:
             write: ->
         invalidResponseHandler: ->
