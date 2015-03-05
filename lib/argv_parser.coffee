@@ -241,6 +241,7 @@ resetHandler = ->
       console.log('reset aborted by user')
     else
       invalidResponseHandler(input)
+    process.stdin.emit('end')
     return
   )
   return
