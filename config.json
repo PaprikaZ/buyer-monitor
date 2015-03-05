@@ -1,0 +1,26 @@
+{
+  "pollInterval": 500,
+  "monitorInterval": 900000,
+  "pushInterval": 2000,
+  "resendDelay": 86400000,
+
+  "logFileName": "ebuy_monitor.log",
+  "loggerLevel": "info",
+  "verdictsFileName": "verdicts.json",
+
+  "redisHost": "127.0.0.1",
+  "redisPort": 6379,
+  "redisRecordDBIndex": 0,
+  "redisHistoryKey": "history",
+  "redisPushQueueKey": "push_queue",
+  "redisDelayQueueKey": "delay_queue",
+  "redisPullQueueKey": "pull_queue",
+
+  "mongoDBUrl": "mongodb://localhost:27020/default",
+
+  "pushServiceUrl": "https://api.pushbullet.com/v2/pushes",
+  "deviceServiceUrl": "https://api.pushbullet.com/v2/devices",
+  "userServiceUrl": "https://api.pushbullet.com/v2/users/me",
+
+  "accounts": []
+}
