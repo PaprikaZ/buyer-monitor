@@ -16,6 +16,8 @@
   "redisDelayQueueKey": "delay_queue",
   "redisPullQueueKey": "pull_queue",
 
+  "mongoDBUrl": "mongodb://localhost:27020/default",
+
   "pushServiceUrl": "https://api.pushbullet.com/v2/pushes",
   "deviceServiceUrl": "https://api.pushbullet.com/v2/devices",
   "userServiceUrl": "https://api.pushbullet.com/v2/users/me",
