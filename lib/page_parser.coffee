@@ -111,34 +111,19 @@ class AmazonUSParser extends AmazonParser
 class AmazonJPParser extends AmazonParser
 class JingdongParser extends Parser
   title: (selector) ->
-    return selector('#name h1').text()
+    return selector('title').text().split(' - ')[0]
+  fullPrice: (selector) -> 0
+  review: (selector) -> review.zeroStar
+
   price: (selector) ->
-    return selector('#jd-price').text()
-  fullPrice: (selector) ->
-    return 0
-  review: (selector) ->
-    rate = selector('.rate strong').text()
-    score = parseInt(rate.slice(0, rate.length - 1))
-    return switch
-      when 95 < score < 101 then review.fiveStar
-      when 85 < score then review.fourHalfStar
-      when 75 < score then review.fourStar
-      when 65 < score then review.threeHalfStar
-      when 55 < score then review.threeStar
-      when 45 < score then review.twoHalfStar
-      when 35 < score then review.twoStar
-      when 25 < score then review.oneHalfStar
-      when 15 < score then review.oneStar
-      when 5 < score then review.halfStar
-      when -1 < score then review.zeroStar
-      else review.unknownStar
+    return selector('.p-price > font:nth-child(1)').text()
   instore: (selector) ->
-    storePrompt = selector('#store-prompt strong').text()
-    return switch
-      when '有货' then true
-      when '无货' then false
-      else -1
-  benefits: -> ['bar']
+    instoreText = selector('.p-stock > span:nth-child(1)').text()
+    if /有货/.test(instoreText)
+      return true
+    else
+      return false
+  benefits: -> ['placeholder']
 
 parseErrorHandler = (parserName) ->
   logger.error('%s parse failed', parserName)

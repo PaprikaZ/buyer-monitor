@@ -46,7 +46,7 @@ describe('site module', function() {
     });
     it('should generate jingdong product url', function() {
       var url;
-      url = util.format('http://item.jd.com/%s.html', testId);
+      url = util.format('http://wap.jd.com/product/%s.html', testId);
       site.generateProductUrl(testId, 'www.jd.com').should.equal(url);
     });
     it('should route to site not support handler', function() {
@@ -79,8 +79,8 @@ describe('site module', function() {
       site.getSiteEncoding('www.amazon.com').should.equal('utf8');
       site.getSiteEncoding('www.amazon.co.jp').should.equal('utf8');
     });
-    it('should return gbk on jingdong site', function() {
-      site.getSiteEncoding('www.jd.com').should.equal('gbk');
+    it('should return utf8 on jingdong site', function() {
+      site.getSiteEncoding('www.jd.com').should.equal('utf8');
     });
     it('should route to site not support handler', function() {
       site.__set__('siteNotSupportHandler', makeCalledTrue);

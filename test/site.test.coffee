@@ -43,7 +43,7 @@ describe('site module', ->
     )
 
     it('should generate jingdong product url', ->
-      url = util.format('http://item.jd.com/%s.html', testId)
+      url = util.format('http://wap.jd.com/product/%s.html', testId)
       site.generateProductUrl(testId, 'www.jd.com').should.equal(url)
       return
     )
@@ -82,8 +82,8 @@ describe('site module', ->
       return
     )
     
-    it('should return gbk on jingdong site', ->
-      site.getSiteEncoding('www.jd.com').should.equal('gbk')
+    it('should return utf8 on jingdong site', ->
+      site.getSiteEncoding('www.jd.com').should.equal('utf8')
       return
     )
 

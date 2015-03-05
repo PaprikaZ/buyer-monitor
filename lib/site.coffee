@@ -28,10 +28,10 @@ sites = [
   },
   {
     site: 'www.jd.com'
-    encoding: 'gbk'
+    encoding: 'utf8'
     regexp: /jd\.com/
     generateProductUrl: (productId) ->
-      return httpPrefix + @site.replace('www', 'item') + '/' + \
+      return httpPrefix + @site.replace('www', 'wap') + '/product/' + \
              productId + htmlSuffix
   }
 ]
