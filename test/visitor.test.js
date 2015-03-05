@@ -6,8 +6,9 @@ rewire = require('rewire');
 Seed = require('../lib/seed.js').Seed;
 
 describe('visitor module', function() {
-  var AmazonCNVisitor, AmazonJPVisitor, AmazonUSVisitor, JingDongVisitor, createVisitor, testAmazonCNSeed, testAmazonCNVerdict, testAmazonJPSeed, testAmazonJPVerdict, testAmazonUSSeed, testAmazonUSVerdict, testJingDongSeed, testJingDongVerdict, visitor;
+  var AmazonCNVisitor, AmazonJPVisitor, AmazonUSVisitor, JingDongVisitor, createVisitor, testAmazonCNSeed, testAmazonCNVerdict, testAmazonJPSeed, testAmazonJPVerdict, testAmazonUSSeed, testAmazonUSVerdict, testJingDongSeed, testJingDongVerdict, testMockErrorMsg, visitor;
   visitor = rewire('../lib/visitor.js');
+  testMockErrorMsg = 'test mock error message';
   visitor.__set__({
     logger: {
       debug: function() {},
@@ -174,13 +175,13 @@ describe('visitor module', function() {
       visitor.__set__({
         request: {
           get: function(url, callback) {
-            callback(new Error('test mock error'));
+            callback(new Error(testMockErrorMsg));
           }
         },
         requestErrorHandler: function(visitor, url, err) {
           makeCalledTrue();
-          visitor.should.equal(AmazonCNVisitor);
-          err.message.should.equal('test mock error');
+          visitor.should.equal('AmazonCNVisitor');
+          err.message.should.equal(testMockErrorMsg);
         }
       });
       v = createVisitor(testAmazonCNSeed);
@@ -199,7 +200,7 @@ describe('visitor module', function() {
         },
         responseErrorHandler: function(visitor, res, body) {
           makeCalledTrue();
-          visitor.should.equal(AmazonCNVisitor);
+          visitor.should.equal('AmazonCNVisitor');
           body.should.equal('bar');
         }
       });
@@ -212,7 +213,7 @@ describe('visitor module', function() {
     var requestErrorHandler;
     requestErrorHandler = visitor.__get__('requestErrorHandler');
     it('should throw error', function() {
-      requestErrorHandler.bind(null, AmazonCNVisitor, '', new Error('mock error')).should["throw"]('mock error');
+      requestErrorHandler.bind(null, AmazonCNVisitor, '', new Error(testMockErrorMsg)).should["throw"](testMockErrorMsg);
     });
   });
   describe('response error handler', function() {

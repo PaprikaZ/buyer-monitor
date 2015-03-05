@@ -5,6 +5,7 @@ Seed = require('../lib/seed.js').Seed
 
 describe('visitor module', ->
   visitor = rewire('../lib/visitor.js')
+  testMockErrorMsg = 'test mock error message'
   visitor.__set__({
     logger:
       debug: ->
@@ -14,7 +15,7 @@ describe('visitor module', ->
     db:
       getClient: ->
         return {lpush: ->}
-    createParser: 
+    createParser:
       parse: ->
         return {
           title: 'test title'
@@ -156,12 +157,12 @@ describe('visitor module', ->
       visitor.__set__({
         request:
           get: (url, callback) ->
-            callback(new Error('test mock error'))
+            callback(new Error(testMockErrorMsg))
             return
         requestErrorHandler: (visitor, url, err) ->
           makeCalledTrue()
-          visitor.should.equal(AmazonCNVisitor)
-          err.message.should.equal('test mock error')
+          visitor.should.equal('AmazonCNVisitor')
+          err.message.should.equal(testMockErrorMsg)
           return
       })
       v = createVisitor(testAmazonCNSeed)
@@ -178,7 +179,7 @@ describe('visitor module', ->
             return
         responseErrorHandler: (visitor, res, body) ->
           makeCalledTrue()
-          visitor.should.equal(AmazonCNVisitor)
+          visitor.should.equal('AmazonCNVisitor')
           body.should.equal('bar')
           return
       })
@@ -193,8 +194,8 @@ describe('visitor module', ->
   describe('request error handler', ->
     requestErrorHandler = visitor.__get__('requestErrorHandler')
     it('should throw error', ->
-      requestErrorHandler.bind(null, AmazonCNVisitor, '', new Error('mock error'))
-        .should.throw('mock error')
+      requestErrorHandler.bind(null, AmazonCNVisitor, '', new Error(testMockErrorMsg))
+        .should.throw(testMockErrorMsg)
       return
     )
     return
