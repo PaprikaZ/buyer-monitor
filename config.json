@@ -4,12 +4,20 @@
   "pushInterval": 2000,
   "resendDelay": 86400000,
 
+  "runPath": "run",
+
+  "logPath": "log",
   "logFileName": "ebuy_monitor.log",
   "loggerLevel": "info",
   "verdictsFileName": "verdicts.json",
 
+  "databaseDataPath": "db",
+  "redisSubPath": "redis",
+  "mongoDBSubPath": "mongodb",
+
   "redisHost": "127.0.0.1",
-  "redisPort": 6379,
+  "redisPort": 6390,
+  "redisLogLevel": "notice",
   "redisDBIndex": 0,
   "redisPushQueueKey": "push_queue",
   "redisDelayQueueKey": "delay_queue",
