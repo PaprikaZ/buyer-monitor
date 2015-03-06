@@ -58,11 +58,12 @@ class Visitor
     return
 
   writePersistRecord: (result) ->
+    console.log(result)
     new Record({
       id: result.id
       site: result.site
       url: result.url
-      created: new Date.toUTCString()
+      created: new Date().toUTCString()
       name: result.title
       price: result.price
       fullPrice: result.fullPrice
