@@ -11,7 +11,7 @@ redisErrorRethrow = (err) ->
   throw err
 
 exports.connectRedis = ->
-  redisClient = redis.connectRedis(config.redisPort, config.redisHost)
+  redisClient = redis.createClient(config.redisPort, config.redisHost)
   redisClient.select(config.redisDBIndex, (err, res) ->
     if err
       logger.error('redis select %s failed', config.redisDBIndex)
