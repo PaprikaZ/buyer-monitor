@@ -13,16 +13,21 @@
 
   "databaseDataPath": "db",
   "redisSubPath": "redis",
-  "mongoDBSubPath": "mongodb",
+  "mongoSubPath": "mongodb",
 
+  "redisCommand": "redis-server",
+  "redisConfFile": "redis.conf",
+  "redisPidFile": "redis-server.pid",
   "redisHost": "127.0.0.1",
   "redisPort": 6390,
-  "redisLogLevel": "notice",
   "redisDBIndex": 0,
   "redisPushQueueKey": "push_queue",
   "redisDelayQueueKey": "delay_queue",
   "redisPullQueueKey": "pull_queue",
 
+  "mongoCommand": "mongod",
+  "mongoConfFile": "mongodb.conf",
+  "mongoPidFile": "mongodb.pid",
   "mongoDBUrl": "mongodb://localhost:27020/default",
   "mongoConnectionOptions": {
     "server": {

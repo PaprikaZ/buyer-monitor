@@ -5,22 +5,29 @@ fs = require('fs')
 appConfigFile = path.join(__dirname, '../config.json')
 config = JSON.parse(fs.readFileSync(appConfigFile, 'utf8'))
 
-runPath = path.join(__dirname, '../', config.runPath)
-mkdirp.sync(runPath)
+config.runPath = path.join(__dirname, '../', config.runPath)
+config.redisPidFile = path.join(config.runPath, config.redisPidFile)
+config.mongoPidFile = path.join(config.runPath, config.mongoPidFile)
+mkdirp.sync(config.runPath)
 
-dbPath = path.join(__dirname, '../', config.databaseDataPath)
-redisDataPath = path.join(dbPath, config.redisSubPath)
-mongoDataPath = path.join(dbPath, config.mongoDBSubPath)
-mkdirp.sync(dbPath)
-mkdirp.sync(redisDataPath)
-mkdirp.sync(mongoDataPath)
+config.dbPath = path.join(__dirname, '../', config.databaseDataPath)
+config.redisDataPath = path.join(config.dbPath, config.redisSubPath)
+config.mongoDataPath = path.join(config.dbPath, config.mongoSubPath)
+mkdirp.sync(config.redisDataPath)
+mkdirp.sync(config.mongoDataPath)
 
-logPath = path.join(__dirname, '../', config.logPath)
-logFile = path.join(logPath, config.logFileName)
-mkdirp.sync(logPath)
+config.redisConfFile = path.join(__dirname, '../', config.redisConfFile)
+config.mongoConfFile = path.join(__dirname, '../', config.mongoConfFile)
+
+config.logPath = path.join(__dirname, '../', config.logPath)
+config.logFile = path.join(config.logPath, config.logFileName)
+mkdirp.sync(config.logPath)
 
 logger = require('winston')
-logger.add(logger.transports.File, {filename: logFile, level: config.loggerLevel})
+logger.add(logger.transports.File, {
+  filename: config.logFile
+  level: config.loggerLevel
+})
 global.logger = logger
 
 module.exports = exports = config

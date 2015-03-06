@@ -1,10 +1,33 @@
+fs = require('fs')
+spawn = require('child_process').spawn
 redis = require('redis')
 mongoose = require('mongoose')
 config = require('./config.js')
 
+# DB paths
+exports.startDBService = ->
+  logger.info('starting redis/mongodb service')
+  try
+    fs.unlinkSync(config.redisPidFile)
+    fs.unlinkSync(config.mongoPidFile)
+  catch err
+  finally
+    spawn(config.redisCommand, [config.redisConfFile])
+    spawn(config.mongoCommand, ['-f', config.mongoConfFile])
+  return
+
+exports.stopDBService = ->
+  logger.info('stopping redis/mongodb service')
+  spawn('pkill', ['--pidfile', config.redisPidFile])
+  spawn('pkill', ['--pidfile', config.mongoPidFile])
+  try
+    fs.unlinkSync(config.mongoPidFile)
+  catch err
+    logger.warn('mongod is already stopped')
+  return
+
 # Redis
 redisClient = null
-
 redisErrorRethrow = (err) ->
   logger.error('redis caught error')
   logger.error('msg: %s', err.message)
@@ -44,7 +67,8 @@ mongoErrorRethrow = (err) ->
   throw err
 
 exports.connectMongoDB = ->
-  mongoose.connect(config.mongoDBUrl, config.mongoConnectionOptions)
+  mongoClient = mongoose.connect(config.mongoDBUrl, config.mongoConnectionOptions)
+  return
 
 exports.getMongoClient = ->
   if mongoClient
