@@ -36,7 +36,7 @@ describe('monitor module', function() {
       }
     },
     db: {
-      getClient: function() {
+      getRedisClient: function() {
         return {
           rpop: function() {}
         };
@@ -143,7 +143,7 @@ describe('monitor module', function() {
       restore = monitor.__set__({
         setTimeout: function() {},
         db: {
-          getClient: function() {
+          getRedisClient: function() {
             return {
               rpop: function() {}
             };
@@ -158,7 +158,7 @@ describe('monitor module', function() {
       var m;
       monitor.__set__({
         db: {
-          getClient: function() {
+          getRedisClient: function() {
             return {
               rpop: function(key, callback) {
                 return callback(new Error('foo'));
@@ -186,7 +186,7 @@ describe('monitor module', function() {
       m = null;
       monitor.__set__({
         db: {
-          getClient: function() {
+          getRedisClient: function() {
             return {
               rpop: makeRpop(queue)
             };
@@ -232,7 +232,7 @@ describe('monitor module', function() {
       makeCalledFalse();
       restore = monitor.__set__({
         db: {
-          getClient: function() {
+          getRedisClient: function() {
             return {
               rpop: function() {}
             };
@@ -250,7 +250,7 @@ describe('monitor module', function() {
       var m;
       monitor.__set__({
         db: {
-          getClient: function() {
+          getRedisClient: function() {
             return {
               rpop: makeRpop([])
             };
@@ -266,7 +266,7 @@ describe('monitor module', function() {
       var m;
       monitor.__set__({
         db: {
-          getClient: function() {
+          getRedisClient: function() {
             return {
               rpop: function(key, callback) {
                 return callback(new Error('foo'));
@@ -284,7 +284,7 @@ describe('monitor module', function() {
       var m;
       monitor.__set__({
         db: {
-          getClient: function() {
+          getRedisClient: function() {
             return {
               rpop: makeRpop([])
             };

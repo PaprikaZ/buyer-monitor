@@ -7,6 +7,7 @@ htmlSuffix = '.html'
 sites = [
   {
     site: 'www.amazon.cn'
+    currency: 'CNY'
     encoding: 'utf8'
     regexp: /amazon\.cn/
     generateProductUrl: (productId) ->
@@ -14,6 +15,7 @@ sites = [
   },
   {
     site: 'www.amazon.com'
+    currency: 'USD'
     encoding: 'utf8'
     regexp: /amazon\.com/
     generateProductUrl: (productId) ->
@@ -21,6 +23,7 @@ sites = [
   },
   {
     site: 'www.amazon.co.jp'
+    currency: 'JPY'
     encoding: 'utf8'
     regexp: /amazon\.co\.jp/
     generateProductUrl: (productId) ->
@@ -28,6 +31,7 @@ sites = [
   },
   {
     site: 'www.jd.com'
+    currency: 'CNY'
     encoding: 'utf8'
     regexp: /jd\.com/
     generateProductUrl: (productId) ->
@@ -41,6 +45,13 @@ generateProductUrl = (id, site) ->
   return switch matched.length
     when 0 then siteNotSupportHandler(site)
     when 1 then matched.pop().generateProductUrl(id)
+    else multiMatchHandler('site')
+
+getSiteCurrency = (site) ->
+  matched = sites.filter((s) -> s.site == site)
+  return switch matched.length
+    when 0 then siteNotSupportHandler(site)
+    when 1 then matched.pop().currency
     else multiMatchHandler('site')
 
 getSiteEncoding = (site) ->
@@ -71,5 +82,6 @@ urlNotSupportHandler = (url) ->
 
 exports.generateProductUrl = generateProductUrl
 exports.getSiteEncoding = getSiteEncoding
+exports.getSiteCurrency = getSiteCurrency
 exports.urlToSite = urlToSite
 module.exports = exports

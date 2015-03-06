@@ -17,7 +17,7 @@ describe('visitor module', function() {
       error: function() {}
     },
     db: {
-      getClient: function() {
+      getRedisClient: function() {
         return {
           lpush: function() {}
         };

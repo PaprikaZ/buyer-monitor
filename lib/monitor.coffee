@@ -13,8 +13,8 @@ verdictsFileName = path.join(__dirname, '../', config.verdictsFileName)
 
 class Monitor
   constructor: ->
-    @client = db.getClient()
-    
+    @client = db.getRedisClient()
+
     if 0 < config.accounts.length
       @accessTokens = config.accounts.map((account) -> account.accessToken)
     else

@@ -21,7 +21,7 @@ describe('monitor module', ->
       readFileSync: ->
         return JSON.stringify(verdicts)
     db:
-      getClient: -> {rpop: ->}
+      getRedisClient: -> {rpop: ->}
     messenger:
       push: ->
     token:
@@ -104,7 +104,7 @@ describe('monitor module', ->
       restore = monitor.__set__({
         setTimeout: ->
         db:
-          getClient: -> {rpop: ->}
+          getRedisClient: -> {rpop: ->}
       })
       return
     )
@@ -113,7 +113,7 @@ describe('monitor module', ->
     it('should pass error to db rethrow handler', ->
       monitor.__set__({
         db:
-          getClient: -> {rpop: (key, callback) -> callback(new Error('foo'))}
+          getRedisClient: -> {rpop: (key, callback) -> callback(new Error('foo'))}
           redisErrorRethrow: makeCalledTrue
       })
       m = createMonitor()
@@ -131,7 +131,7 @@ describe('monitor module', ->
       m = null
       monitor.__set__({
         db:
-          getClient: -> {rpop: makeRpop(queue)}
+          getRedisClient: -> {rpop: makeRpop(queue)}
         setTimeout: (callback, timeout) ->
           makeCalledTrue()
           m.seeds.map((seed, idx) -> seed.equal(remainingVdts[idx]).should.be.true)
@@ -168,7 +168,7 @@ describe('monitor module', ->
       makeCalledFalse()
       restore = monitor.__set__({
         db:
-          getClient: -> {rpop: ->}
+          getRedisClient: -> {rpop: ->}
         messenger:
           push: ->
       })
@@ -179,7 +179,7 @@ describe('monitor module', ->
     it('should push messages after push queue cleared', ->
       monitor.__set__({
         db:
-          getClient: -> {rpop: makeRpop([])}
+          getRedisClient: -> {rpop: makeRpop([])}
       })
       m = createMonitor()
       m.pushMessages = makeCalledTrue
@@ -191,7 +191,7 @@ describe('monitor module', ->
     it('should pass error to db rethrow handler', ->
       monitor.__set__({
         db:
-          getClient: -> {rpop: (key, callback) -> callback(new Error('foo'))}
+          getRedisClient: -> {rpop: (key, callback) -> callback(new Error('foo'))}
           redisErrorRethrow: makeCalledTrue
       })
       m = createMonitor()
@@ -203,7 +203,7 @@ describe('monitor module', ->
     it('should not push any message when push queue empty', ->
       monitor.__set__({
         db:
-          getClient: -> {rpop: makeRpop([])}
+          getRedisClient: -> {rpop: makeRpop([])}
         messenger:
           push: makeCalledTrue
       })

@@ -3,7 +3,7 @@ fs = require('fs')
 path = require('path')
 
 _seed = require('./seed.js')
-AVAILABLE_COMPARES = _seed.AVAILABLE_COMPARES
+AVAILABLE_METHODS = _seed.AVAILABLE_METHODS
 MANDATORY_BASE_FIELDS = _seed.MANDATORY_BASE_FIELDS
 AVAILABLE_VERDICT_FIELDS = _seed.AVAILABLE_VERDICT_FIELDS
 
@@ -114,7 +114,7 @@ addHandler = (argv) ->
     record = {}
     keywordIter = (remaining, parse) ->
       if 1 < remaining.length
-        if AVAILABLE_COMPARES.indexOf(remaining[0]) != -1
+        if AVAILABLE_METHODS.indexOf(remaining[0]) != -1
           return {
             compare: remaining[0]
             target: parse(remaining[1])

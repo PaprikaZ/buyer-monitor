@@ -7,11 +7,13 @@ MANDATORY_EXPAND_FIELDS = s.MANDATORY_EXPAND_FIELDS
 MANDATORY_BASE_FIELDS = s.MANDATORY_BASE_FIELDS
 createParser = require('./page_parser.js').createParser
 db = require('./db.js')
+Record = require('./model.js')
 
 class Visitor
   constructor: (seed) ->
     @seed = seed
-    @client = db.getClient()
+    @redisClient = db.getRedisClient()
+    @mongoClient = db.getMongoClient()
 
   visit: ->
     self = this
@@ -31,30 +33,44 @@ class Visitor
     return
 
   processPage: (html) ->
-    date = new Date()
     result = @parsePage(html)
+    @seed.verdict(result) and @pushToQueue(result)
+    @writePersistRecord(result)
+    return
 
-    if @seed.verdict(result)
-      delayDebugMsg = 'push and delay '
-      MANDATORY_BASE_FIELDS.map((field) ->
-        delayDebugMsg += util.format('%s %s', field, result[field])
-        return
-      )
-      logger.debug(delayDebugMsg)
+  pushToQueue: (result) ->
+    delayDebugMsg = 'push and delay '
+    MANDATORY_BASE_FIELDS.map((field) ->
+      delayDebugMsg += util.format('%s %s', field, result[field])
+      return
+    )
+    logger.debug(delayDebugMsg)
 
-      delayMsg = {}
-      MANDATORY_BASE_FIELDS.map((field) ->
-        delayMsg[field] = result[field]
-        return
-      )
-      @client.lpush(config.redisDelayQueueKey, JSON.stringify(delayMsg),
-        (err) -> err and db.redisErrorRethrow(err))
-      @client.lpush(config.redisPushQueueKey, JSON.stringify(result),
-        (err) -> err and db.redisErrorRethrow(err))
-
-    result.date = date.toUTCString()
-    @client.lpush(config.redisHistoryKey, JSON.stringify(result),
+    delayMsg = {}
+    MANDATORY_BASE_FIELDS.map((field) ->
+      delayMsg[field] = result[field]
+      return
+    )
+    @redisClient.lpush(config.redisDelayQueueKey, JSON.stringify(delayMsg),
       (err) -> err and db.redisErrorRethrow(err))
+    @redisClient.lpush(config.redisPushQueueKey, JSON.stringify(result),
+      (err) -> err and db.redisErrorRethrow(err))
+    return
+
+  writePersistRecord: (result) ->
+    new Record({
+      id: result.id
+      site: result.site
+      url: result.url
+      created: new Date.toUTCString()
+      name: result.title
+      price: result.price
+      fullPrice: result.fullPrice
+      currency: result.currency
+      instore: result.instore
+      review: result.review
+      benefits: result.benefits
+    }).save()
     return
 
   parsePage: (html) ->

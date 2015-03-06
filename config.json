@@ -10,13 +10,26 @@
 
   "redisHost": "127.0.0.1",
   "redisPort": 6379,
-  "redisRecordDBIndex": 0,
-  "redisHistoryKey": "history",
+  "redisDBIndex": 0,
   "redisPushQueueKey": "push_queue",
   "redisDelayQueueKey": "delay_queue",
   "redisPullQueueKey": "pull_queue",
 
   "mongoDBUrl": "mongodb://localhost:27020/default",
+  "mongoConnectionOptions": {
+    "server": {
+      "pollSize": 2,
+      "socketOptions": { "keepAlive": 1 }
+    }
+  },
+  "mongoSchemaOptions": {
+    "id": true,
+    "safe": true,
+    "strict": "throw",
+    "versionKey": true,
+    "autoIndex": false,
+    "bufferCommands": true
+  },
 
   "pushServiceUrl": "https://api.pushbullet.com/v2/pushes",
   "deviceServiceUrl": "https://api.pushbullet.com/v2/devices",

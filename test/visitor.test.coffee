@@ -13,7 +13,7 @@ describe('visitor module', ->
       warn: ->
       error: ->
     db:
-      getClient: ->
+      getRedisClient: ->
         return {lpush: ->}
     createParser:
       parse: ->
