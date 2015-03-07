@@ -39,7 +39,6 @@
     "id": true,
     "safe": true,
     "strict": "throw",
-    "versionKey": true,
     "autoIndex": false,
     "bufferCommands": true
   },
