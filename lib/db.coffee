@@ -18,8 +18,13 @@ exports.startDBService = ->
 
 exports.stopDBService = ->
   logger.info('stopping redis/mongodb service')
-  spawn('pkill', ['--pidfile', config.redisPidFile])
-  spawn('pkill', ['--pidfile', config.mongoPidFile])
+  redisClient.quit()
+  mongoose.disconnect()
+  setTimeout((->
+    spawn('pkill', ['--pidfile', config.redisPidFile])
+    spawn('pkill', ['--pidfile', config.mongoPidFile])
+    return
+  ), 500)
   try
     fs.unlinkSync(config.mongoPidFile)
   catch err
