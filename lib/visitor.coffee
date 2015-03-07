@@ -13,7 +13,6 @@ class Visitor
   constructor: (seed) ->
     @seed = seed
     @redisClient = db.getRedisClient()
-    @mongoClient = db.getMongoClient()
 
   visit: ->
     self = this

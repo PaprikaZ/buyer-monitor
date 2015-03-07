@@ -35,6 +35,11 @@ describe('visitor module', function() {
           discount: 50
         };
       }
+    },
+    Record: function() {
+      return {
+        save: function() {}
+      };
     }
   });
   createVisitor = visitor.createVisitor;

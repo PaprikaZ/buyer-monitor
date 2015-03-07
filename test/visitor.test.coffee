@@ -13,8 +13,7 @@ describe('visitor module', ->
       warn: ->
       error: ->
     db:
-      getRedisClient: ->
-        return {lpush: ->}
+      getRedisClient: -> { lpush: -> }
     createParser:
       parse: ->
         return {
@@ -26,6 +25,7 @@ describe('visitor module', ->
           benefits: []
           discount: 50
         }
+    Record: -> { save: -> }
   })
   createVisitor = visitor.createVisitor
   AmazonCNVisitor = visitor.__get__('AmazonCNVisitor')

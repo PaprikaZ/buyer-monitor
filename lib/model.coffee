@@ -78,6 +78,8 @@ recordSchema = new mongoose.Schema({
     default: false
   }
 }, config.mongoSchemaOptions)
+if mongoose.modelNames().indexOf('Record') == -1
+  mongoose.model('Record', recordSchema)
 
 FieldVerdictSchema = new mongoose.Schema({
   field: {
@@ -109,8 +111,10 @@ verdictSchema = new mongoose.Schema({
   }
   fields: [FieldVerdictSchema]
 }, config.mongoSchemaOptions)
+if mongoose.modelNames().indexOf('Verdict') == -1
+  mongoose.model('Verdict', verdictSchema)
 
 module.exports = exports = {
-  Record: mongoose.model('Record', recordSchema)
-  Verdict: mongoose.model('Verdict', verdictSchema)
+  Record: mongoose.model('Record')
+  Verdict: mongoose.model('Verdict')
 }
