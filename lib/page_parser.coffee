@@ -69,8 +69,7 @@ class Parser
 class AmazonParser extends Parser
   title: (selector) ->
     return selector('#productTitle').text()
-  priceToInt: (text) ->
-    return parseInt(text.slice(1).replace(',', ''))
+  priceToInt: (text) -> parseInt(text.slice(1).replace(',', ''))
   price: (selector) ->
     return @priceToInt(selector('#priceblock_ourprice').text())
   fullPrice: (selector) ->
@@ -112,11 +111,11 @@ class AmazonJPParser extends AmazonParser
 class JingdongParser extends Parser
   title: (selector) ->
     return selector('title').text().split(' - ')[0]
+  priceToInt: (text) -> parseInt(text.slice(1))
+  price: (selector) ->
+    return @priceToInt(selector('.p-price > font:nth-child(1)').text())
   fullPrice: (selector) -> 0
   review: (selector) -> review.zeroStar
-
-  price: (selector) ->
-    return selector('.p-price > font:nth-child(1)').text()
   instore: (selector) ->
     instoreText = selector('.p-stock > span:nth-child(1)').text()
     if /有货/.test(instoreText)
