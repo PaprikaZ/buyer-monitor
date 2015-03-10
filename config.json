@@ -7,8 +7,8 @@
   "runPath": "run",
 
   "logPath": "log",
-  "logFileName": "ebuy_monitor.log",
-  "loggerLevel": "info",
+  "logFileName": "buyer_monitor.log",
+  "logLevel": "info",
   "verdictsFileName": "verdicts.json",
 
   "databaseDataPath": "db",

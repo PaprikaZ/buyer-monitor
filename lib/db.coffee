@@ -79,8 +79,8 @@ exports.getMongoClient = ->
   if mongoClient
     return mongoClient
   else
-    logger.debug('mongo client should be created just adter monitor launched')
-    throw new Error('mongo db client not initialized')
+    logger.debug('mongo client should be created just after monitor launched')
+    throw new Error('mongodb client not initialized')
 
 exports.mongoErrorRethrow = mongoErrorRethrow
 
