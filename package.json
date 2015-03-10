@@ -1,11 +1,12 @@
 {
-  "name": "ebuy_monitor",
+  "name": "buyer-monitor",
   "version": "0.0.1",
-  "description": "Personal ebuy price monitor tool",
+  "description": "buyer price monitor tool",
   "keywords": [
     "shopping",
-    "ebuy",
-    "monitor"
+    "buy",
+    "monitor",
+    "tool"
   ],
   "author": {
     "name": "Zhu Jie",
@@ -13,11 +14,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/PaprikaZ/ebuy_monitor.git"
+    "url": "https://github.com/PaprikaZ/buyer-monitor.git"
   },
   "main": "./app.js",
   "bugs": {
-    "url": "https://github.com/PaprikaZ/ebuy_monitor/issues"
+    "url": "https://github.com/PaprikaZ/buyer-monitor/issues"
   },
   "engines": {
     "node": ">= 0.10.x"
@@ -43,7 +44,7 @@
   "licenses": [
     {
       "type": "GPL2",
-      "url": "https://github.com/PaprikaZ/ebuy_monitor/raw/master/LICENSE"
+      "url": "https://github.com/PaprikaZ/buyer-monitor/raw/master/LICENSE"
     }
   ]
 }
